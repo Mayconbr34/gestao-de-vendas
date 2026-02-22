@@ -7,8 +7,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3001:3001'
-    # env_file:
-    #   - ./backend/.env
+    env_file:
+      - .env
 
   frontend:
     build: ./frontend
