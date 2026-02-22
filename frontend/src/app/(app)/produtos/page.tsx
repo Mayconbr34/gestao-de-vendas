@@ -17,6 +17,7 @@ type Product = {
   origin?: number | null;
   stock: number;
   price: number;
+  costPrice?: number | null;
   barcode?: string | null;
   imageUrl?: string | null;
   categoryName?: string | null;
@@ -98,6 +99,12 @@ const PAGE_SIZE = 10;
 
 type SortKey = 'name' | 'sku' | 'stock' | 'price' | 'categoryName';
 type SortDir = 'asc' | 'desc';
+
+const calcProfitPercent = (sale?: number | null, cost?: number | null) => {
+  if (cost === null || cost === undefined || cost <= 0) return null;
+  if (sale === null || sale === undefined) return null;
+  return ((sale - cost) / cost) * 100;
+};
 
 /* ─── Main Page ──────────────────────────────────────────── */
 
@@ -254,18 +261,28 @@ export default function ProdutosPage() {
         .pl-tr:hover .pl-name { color: var(--accent) !important; }
         .pl-table-wrap { -webkit-overflow-scrolling: touch; }
         @media (max-width: 900px) {
+          .pl-header { flex-direction: column !important; align-items: flex-start !important; }
+          .pl-actions { width: 100% !important; flex-direction: column !important; align-items: stretch !important; }
+          .pl-actions a { width: 100% !important; justify-content: center !important; }
           .pl-filters { flex-direction: column !important; }
-          .pl-table-wrap { overflow-x: auto; }
+          .pl-filters > * { flex: 1 1 100% !important; min-width: 0 !important; width: 100% !important; }
+          .pl-table-wrap { overflow-x: hidden !important; padding: 12px !important; }
           .pl-table { display: none !important; }
           .pl-cards { display: grid !important; }
-          .pl-table-wrap { padding: 16px; }
+          .pl-card-header { align-items: flex-start !important; }
+          .pl-card-meta { display: flex !important; flex-direction: column !important; gap: 4px !important; }
+          .pl-card-price { font-size: 13.5px !important; }
+        }
+        @media (max-width: 480px) {
+          .pl-header h1 { font-size: 20px !important; }
+          .pl-header p { font-size: 12.5px !important; }
         }
       `}</style>
 
       <div style={{ width: '100%', margin: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
         {/* ── Header ── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+        <div className="pl-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: '700', color: tk.text, letterSpacing: '-0.03em', margin: 0 }}>
               Produtos
@@ -274,7 +291,7 @@ export default function ProdutosPage() {
               Controle de catálogo, estoque e preços com dados fiscais.
             </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="pl-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Link
               href="/produtos/importar"
               style={{
@@ -464,7 +481,8 @@ export default function ProdutosPage() {
                       { key: null, label: 'Origem', width: '80px' },
                       { key: null, label: 'Barcode', width: '110px' },
                       { key: 'stock', label: 'Estoque', width: '90px' },
-                      { key: 'price', label: 'Preço', width: '100px' },
+                      { key: 'price', label: 'Preço venda', width: '110px' },
+                      { key: null, label: 'Lucro %', width: '90px' },
                     ] as { key: SortKey | null; label: string; width: string }[]
                   ).map(({ key, label, width }, i) => (
                     <th
@@ -581,14 +599,22 @@ export default function ProdutosPage() {
                         R$ {Number(item.price).toFixed(2)}
                       </span>
                     </td>
+                    {/* Profit */}
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{ fontSize: '12.5px', color: tk.textSub, fontFamily: 'var(--pl-font)' }}>
+                        {calcProfitPercent(item.price, item.costPrice) === null
+                          ? '—'
+                          : `${calcProfitPercent(item.price, item.costPrice)!.toFixed(1)}%`}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
               </table>
 
-              <div className="pl-cards" style={{ display: 'none', gap: '12px' }}>
+              <div className="pl-cards" style={{ display: 'none', gap: '12px', padding: '16px' }}>
                 {paginated.map((item) => (
-                  <div key={item.id} style={{
+                  <div key={item.id} className="pl-card" style={{
                     border: `1px solid ${tk.border}`,
                     borderRadius: '12px',
                     padding: '12px',
@@ -596,7 +622,7 @@ export default function ProdutosPage() {
                     gap: '10px',
                     background: tk.surface,
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className="pl-card-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                       <div style={{
                         width: '42px', height: '42px', borderRadius: '10px',
                         background: tk.surfaceAlt, border: `1px solid ${tk.border}`,
@@ -611,39 +637,57 @@ export default function ProdutosPage() {
                           </span>
                         )}
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <Link href={`/produtos/${item.id}`} style={{ fontSize: '14px', fontWeight: '600', color: tk.text, textDecoration: 'none' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Link
+                          href={`/produtos/${item.id}`}
+                          className="pl-card-title"
+                          style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: tk.text,
+                            textDecoration: 'none',
+                            display: 'block',
+                            whiteSpace: 'normal',
+                            wordBreak: 'break-word',
+                          }}
+                        >
                           {item.name}
                         </Link>
-                        <div style={{ fontSize: '12px', color: tk.textSub, marginTop: '2px' }}>
-                          SKU: {item.sku || '—'} · NCM: {item.ncm || '—'}
+                        <div className="pl-card-meta" style={{ fontSize: '12px', color: tk.textSub, marginTop: '2px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          <span>SKU: {item.sku || '—'}</span>
+                          <span>NCM: {item.ncm || '—'}</span>
                         </div>
                       </div>
                       {stockBadge(item.stock)}
                     </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {item.categoryName && (
-                    <span style={{ fontSize: '12px', color: tk.text, background: tk.surfaceAlt, padding: '3px 8px', borderRadius: '20px' }}>
-                      {item.categoryName}
-                    </span>
-                  )}
-                  <span style={{ fontSize: '12px', color: tk.textSub, background: tk.surfaceAlt, padding: '3px 8px', borderRadius: '20px' }}>
-                    Origem {originShort(item.origin)}
-                  </span>
-                  <span style={{ fontSize: '12px', color: tk.textSub, background: tk.surfaceAlt, padding: '3px 8px', borderRadius: '20px' }}>
-                    {item.taxType || '—'}
-                  </span>
-                  <span style={{ fontSize: '12px', color: tk.textSub, background: tk.surfaceAlt, padding: '3px 8px', borderRadius: '20px' }}>
-                    CEST {item.cest || '—'}
-                  </span>
+                    <div className="pl-card-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {item.categoryName && (
+                        <span style={{ fontSize: '12px', color: tk.text, background: tk.surfaceAlt, padding: '3px 8px', borderRadius: '20px' }}>
+                          {item.categoryName}
+                        </span>
+                      )}
+                      <span style={{ fontSize: '12px', color: tk.textSub, background: tk.surfaceAlt, padding: '3px 8px', borderRadius: '20px' }}>
+                        Origem {originShort(item.origin)}
+                      </span>
+                      <span style={{ fontSize: '12px', color: tk.textSub, background: tk.surfaceAlt, padding: '3px 8px', borderRadius: '20px' }}>
+                        {item.taxType || '—'}
+                      </span>
+                      <span style={{ fontSize: '12px', color: tk.textSub, background: tk.surfaceAlt, padding: '3px 8px', borderRadius: '20px' }}>
+                        CEST {item.cest || '—'}
+                      </span>
                       <span style={{ fontSize: '12px', color: tk.textSub, background: tk.surfaceAlt, padding: '3px 8px', borderRadius: '20px' }}>
                         Barcode {item.barcode || '—'}
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: tk.text }}>
+                    <div className="pl-card-price" style={{ fontSize: '14px', fontWeight: '600', color: tk.text }}>
                       R$ {Number(item.price).toFixed(2)}
+                      <span style={{ fontSize: '12px', fontWeight: '500', color: tk.textSub, marginLeft: '8px' }}>
+                        {calcProfitPercent(item.price, item.costPrice) === null
+                          ? 'Lucro —'
+                          : `Lucro ${calcProfitPercent(item.price, item.costPrice)!.toFixed(1)}%`}
+                      </span>
                     </div>
                   </div>
                 ))}

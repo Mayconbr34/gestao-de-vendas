@@ -33,6 +33,7 @@ export class ProductsService {
         'product.origin AS origin',
         'product.stock AS stock',
         'product.price AS price',
+        'product.cost_price AS cost_price',
         'product.barcode AS barcode',
         'product.image_url AS image_url',
         'product.tax_type AS tax_type',
@@ -57,6 +58,7 @@ export class ProductsService {
       origin: row.origin !== null && row.origin !== undefined ? Number(row.origin) : null,
       stock: Number(row.stock),
       price: Number(row.price),
+      costPrice: row.cost_price !== null && row.cost_price !== undefined ? Number(row.cost_price) : null,
       barcode: row.barcode,
       imageUrl: row.image_url ?? null,
       taxType: row.tax_type ?? null,
@@ -92,6 +94,7 @@ export class ProductsService {
       origin: product.origin !== null && product.origin !== undefined ? Number(product.origin) : null,
       stock: Number(product.stock),
       price: Number(product.price),
+      costPrice: product.costPrice ?? null,
       barcode: product.barcode ?? null,
       imageUrl: product.imageUrl ?? null,
       taxType: product.taxType ?? null,
@@ -132,6 +135,7 @@ export class ProductsService {
       price: dto.price,
       barcode: dto.barcode ?? null,
       imageUrl: null,
+      costPrice: dto.costPrice ?? null,
       taxProfileId: taxProfile?.id ?? null,
       taxType: taxProfile?.taxType ?? dto.taxType ?? null,
       taxNcm: taxProfile?.ncm ?? dto.taxNcm ?? null,
@@ -180,6 +184,7 @@ export class ProductsService {
     if (dto.origin !== undefined) product.origin = dto.origin;
     if (dto.stock !== undefined) product.stock = dto.stock;
     if (dto.price !== undefined) product.price = dto.price;
+    if (dto.costPrice !== undefined) product.costPrice = dto.costPrice ?? null;
     if (dto.barcode !== undefined) product.barcode = dto.barcode ?? null;
 
     if (dto.taxProfileId) {

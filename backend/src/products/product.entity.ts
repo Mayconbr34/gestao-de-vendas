@@ -29,6 +29,9 @@ export class Product {
   @Column('decimal', { precision: 10, scale: 2, transformer: priceTransformer })
   price: number;
 
+  @Column('decimal', { name: 'cost_price', precision: 10, scale: 2, transformer: priceTransformer, nullable: true })
+  costPrice?: number | null;
+
   @Column({ type: 'varchar', length: 80, nullable: true })
   barcode?: string | null;
 

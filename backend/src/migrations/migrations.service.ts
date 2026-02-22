@@ -432,6 +432,13 @@ export class MigrationsService implements OnApplicationBootstrap {
         `);
       });
 
+      await runMigration('product_024', async () => {
+        await queryRunner.query(`
+          ALTER TABLE products
+          ADD COLUMN IF NOT EXISTS cost_price NUMERIC(10, 2);
+        `);
+      });
+
       await runMigration('platform_024', async () => {
         await queryRunner.query(`
           CREATE TABLE IF NOT EXISTS platform_settings (

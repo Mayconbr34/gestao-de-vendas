@@ -15,6 +15,7 @@ type ProductDetail = {
   sku?: string | null;
   stock: number;
   price: number;
+  costPrice?: number | null;
   barcode?: string | null;
   ncm?: string | null;
   cest?: string | null;
@@ -50,6 +51,35 @@ const TAX_TYPE_OPTIONS = [
   { value: 'ICMS_ST', label: 'Substituição tributária (ICMS-ST)' },
   { value: 'ISENTO', label: 'Isento' },
 ];
+
+const toNumber = (value: string) => {
+  const normalized = value.replace(',', '.').trim();
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const formatNumber = (value: number | null) => {
+  if (value === null || !Number.isFinite(value)) return '';
+  return value.toFixed(2);
+};
+
+const calcProfitPercent = (sale: number | null, cost: number | null) => {
+  if (cost === null || cost <= 0 || sale === null) return null;
+  return ((sale - cost) / cost) * 100;
+};
+
+const calcSaleFromProfit = (cost: number | null, profit: number | null) => {
+  if (cost === null || profit === null) return null;
+  return cost * (1 + profit / 100);
+};
+
+const calcCostFromProfit = (sale: number | null, profit: number | null) => {
+  if (sale === null || profit === null) return null;
+  const denom = 1 + profit / 100;
+  if (denom <= 0) return null;
+  return sale / denom;
+};
 
 /* ─── Icons ──────────────────────────────────────────────── */
 
@@ -271,7 +301,9 @@ export default function NovoProdutoPage() {
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [stock, setStock] = useState('');
-  const [price, setPrice] = useState('');
+  const [salePrice, setSalePrice] = useState('');
+  const [costPrice, setCostPrice] = useState('');
+  const [profitPercent, setProfitPercent] = useState('');
   const [barcode, setBarcode] = useState('');
   const [ncm, setNcm] = useState('');
   const [cest, setCest] = useState('');
@@ -305,7 +337,13 @@ export default function NovoProdutoPage() {
         setName(data.name || '');
         setSku(data.sku || '');
         setStock(String(data.stock ?? ''));
-        setPrice(String(data.price ?? ''));
+        setSalePrice(String(data.price ?? ''));
+        setCostPrice(data.costPrice !== null && data.costPrice !== undefined ? String(data.costPrice) : '');
+        const computedProfit = calcProfitPercent(
+          data.price ?? null,
+          data.costPrice ?? null
+        );
+        setProfitPercent(computedProfit === null ? '' : computedProfit.toFixed(2));
         setBarcode(data.barcode || '');
         setNcm(data.ncm || '');
         setCest(data.cest || '');
@@ -330,8 +368,76 @@ export default function NovoProdutoPage() {
   const isValidNcm = /^\d{8}$/.test(ncm.trim());
   const isValidCest = !cest.trim() || /^\d{7}$/.test(cest.trim());
 
+  const syncFromSale = (nextSale: string) => {
+    const sale = toNumber(nextSale);
+    const profit = toNumber(profitPercent);
+    const cost = toNumber(costPrice);
+    if (isEdit) {
+      if (cost !== null && sale !== null) {
+        const pct = calcProfitPercent(sale, cost);
+        setProfitPercent(pct === null ? '' : formatNumber(pct));
+      } else if (profit !== null && sale !== null) {
+        const computedCost = calcCostFromProfit(sale, profit);
+        setCostPrice(formatNumber(computedCost));
+      }
+    } else {
+      if (profit !== null && sale !== null) {
+        const computedCost = calcCostFromProfit(sale, profit);
+        setCostPrice(formatNumber(computedCost));
+      }
+    }
+  };
+
+  const syncFromCost = (nextCost: string) => {
+    const sale = toNumber(salePrice);
+    const cost = toNumber(nextCost);
+    const profit = toNumber(profitPercent);
+    if (sale !== null && cost !== null) {
+      const pct = calcProfitPercent(sale, cost);
+      setProfitPercent(pct === null ? '' : formatNumber(pct));
+    } else if (profit !== null && cost !== null) {
+      const computedSale = calcSaleFromProfit(cost, profit);
+      setSalePrice(formatNumber(computedSale));
+    }
+  };
+
+  const syncFromProfit = (nextProfit: string) => {
+    const profit = toNumber(nextProfit);
+    const sale = toNumber(salePrice);
+    const cost = toNumber(costPrice);
+    if (isEdit) {
+      if (cost !== null && profit !== null) {
+        const computedSale = calcSaleFromProfit(cost, profit);
+        setSalePrice(formatNumber(computedSale));
+      } else if (sale !== null && profit !== null) {
+        const computedCost = calcCostFromProfit(sale, profit);
+        setCostPrice(formatNumber(computedCost));
+      }
+    } else {
+      if (sale !== null && profit !== null) {
+        const computedCost = calcCostFromProfit(sale, profit);
+        setCostPrice(formatNumber(computedCost));
+      }
+    }
+  };
+
+  const handleSalePriceChange = (value: string) => {
+    setSalePrice(value);
+    syncFromSale(value);
+  };
+
+  const handleCostPriceChange = (value: string) => {
+    setCostPrice(value);
+    syncFromCost(value);
+  };
+
+  const handleProfitPercentChange = (value: string) => {
+    setProfitPercent(value);
+    syncFromProfit(value);
+  };
+
   const resetForm = () => {
-    setName(''); setSku(''); setStock(''); setPrice(''); setBarcode('');
+    setName(''); setSku(''); setStock(''); setSalePrice(''); setCostPrice(''); setProfitPercent(''); setBarcode('');
     setNcm(''); setCest(''); setOrigin(''); setTaxType(''); setCategoryQuery('');
     setCategoryId(null); setShowSuggestions(false); setStep(1);
     setImageFile(null); setImagePreview(null);
@@ -346,6 +452,14 @@ export default function NovoProdutoPage() {
       if (!isValidCest) { setFormError('CEST deve ter 7 dígitos numéricos.'); return; }
       if (!origin) { setFormError('Informe a origem do produto.'); return; }
       if (!taxType) { setFormError('Informe o tipo de tributação do produto.'); return; }
+
+      const saleValue = toNumber(salePrice);
+      if (saleValue === null) { setFormError('Preço de venda inválido.'); return; }
+      const profitValue = toNumber(profitPercent);
+      if (profitValue === null) { setFormError('Lucro inválido.'); return; }
+      const baseCost = toNumber(costPrice);
+      const resolvedCost =
+        baseCost !== null ? baseCost : calcCostFromProfit(saleValue, profitValue);
 
       const trimmedCategory = categoryQuery.trim();
       let resolvedCategoryId = categoryId;
@@ -375,7 +489,8 @@ export default function NovoProdutoPage() {
               cest: cest.trim() || undefined,
               origin: Number(origin),
               stock: Number(stock),
-              price: Number(price),
+              price: saleValue,
+              costPrice: resolvedCost ?? undefined,
               barcode: barcode.trim() || undefined,
               categoryId: resolvedCategoryId,
               taxType,
@@ -400,7 +515,7 @@ export default function NovoProdutoPage() {
             body: JSON.stringify({
               name: name.trim(), sku: sku.trim(), ncm: ncm.trim(),
               cest: cest.trim() || undefined, origin: Number(origin),
-              stock: Number(stock), price: Number(price),
+              stock: Number(stock), price: saleValue, costPrice: resolvedCost ?? undefined,
               barcode: barcode.trim() || undefined, categoryId: resolvedCategoryId,
               taxType,
             }),
@@ -425,7 +540,12 @@ export default function NovoProdutoPage() {
     }
   };
 
-  const canContinueProduct = name.trim().length > 1 && sku.trim().length > 1 && price !== '' && stock !== '';
+  const canContinueProduct =
+    name.trim().length > 1 &&
+    sku.trim().length > 1 &&
+    salePrice !== '' &&
+    stock !== '' &&
+    profitPercent !== '';
   const canContinueFiscal = isValidNcm && isValidCest && origin !== '' && taxType !== '';
   const canContinueCategory = categoryQuery.trim().length > 0;
 
@@ -635,9 +755,24 @@ export default function NovoProdutoPage() {
                     <Input value={stock} onChange={setStock} placeholder="0" type="number" tk={tk} />
                   </Field>
                   <Field label="Preço de venda (R$) *" tk={tk}>
-                    <Input value={price} onChange={setPrice} placeholder="0.00" type="number" tk={tk} />
+                    <Input value={salePrice} onChange={handleSalePriceChange} placeholder="0.00" type="number" tk={tk} />
                   </Field>
                 </div>
+
+                {isEdit ? (
+                  <div className="np-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <Field label="Lucro (%) *" tk={tk}>
+                      <Input value={profitPercent} onChange={handleProfitPercentChange} placeholder="0" type="number" tk={tk} />
+                    </Field>
+                    <Field label="Preço de entrada (R$)" tk={tk}>
+                      <Input value={costPrice} onChange={handleCostPriceChange} placeholder="0.00" type="number" tk={tk} />
+                    </Field>
+                  </div>
+                ) : (
+                  <Field label="Lucro (%) *" tk={tk}>
+                    <Input value={profitPercent} onChange={handleProfitPercentChange} placeholder="0" type="number" tk={tk} />
+                  </Field>
+                )}
 
                 {/* Image upload */}
                 <Field label="Imagem do produto" tk={tk}>
@@ -881,7 +1016,8 @@ export default function NovoProdutoPage() {
             {[
               ['Produto', name || '—'],
               ['SKU', sku || '—'],
-              ['Preço', price ? `R$ ${Number(price).toFixed(2)}` : '—'],
+              ['Preço venda', salePrice ? `R$ ${Number(salePrice).toFixed(2)}` : '—'],
+              ['Lucro (%)', profitPercent ? `${Number(profitPercent).toFixed(2)}%` : '—'],
               ['Estoque', stock || '—'],
               ['Tributação', taxType || '—'],
               ['NCM', ncm || '—'],

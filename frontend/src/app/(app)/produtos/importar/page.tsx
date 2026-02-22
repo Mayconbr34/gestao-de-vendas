@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import { apiRequest } from '../../../../lib/api';
@@ -20,7 +20,9 @@ type ImportItem = {
   cest: string;
   taxType: string;
   origin: string;
-  price: string;
+  salePrice: string;
+  costPrice: string;
+  profitPercent: string;
   stock: string;
   barcode: string;
   categoryId?: string;
@@ -174,6 +176,93 @@ const parseNumber = (value: unknown) => {
   return str ? String(Number(str)) : '';
 };
 
+const toNumber = (value: string) => {
+  const normalized = value.replace(',', '.').trim();
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const formatNumber = (value: number | null) => {
+  if (value === null || !Number.isFinite(value)) return '';
+  return value.toFixed(2);
+};
+
+const calcProfitPercent = (sale: number | null, cost: number | null) => {
+  if (cost === null || cost <= 0 || sale === null) return null;
+  return ((sale - cost) / cost) * 100;
+};
+
+const calcSaleFromProfit = (cost: number | null, profit: number | null) => {
+  if (cost === null || profit === null) return null;
+  return cost * (1 + profit / 100);
+};
+
+const calcCostFromProfit = (sale: number | null, profit: number | null) => {
+  if (sale === null || profit === null) return null;
+  const denom = 1 + profit / 100;
+  if (denom <= 0) return null;
+  return sale / denom;
+};
+
+const normalizePricing = (item: ImportItem) => {
+  const cost = toNumber(item.costPrice);
+  const sale = toNumber(item.salePrice);
+  const profit = toNumber(item.profitPercent);
+  if (cost !== null && sale !== null) {
+    const pct = calcProfitPercent(sale, cost);
+    return { ...item, profitPercent: pct === null ? '' : formatNumber(pct) };
+  }
+  if (cost !== null && profit !== null) {
+    const computedSale = calcSaleFromProfit(cost, profit);
+    return { ...item, salePrice: formatNumber(computedSale) };
+  }
+  if (sale !== null && profit !== null) {
+    const computedCost = calcCostFromProfit(sale, profit);
+    return { ...item, costPrice: formatNumber(computedCost) };
+  }
+  return item;
+};
+
+const updatePricingField = (item: ImportItem, field: 'salePrice' | 'costPrice' | 'profitPercent', value: string) => {
+  const next: ImportItem = { ...item, [field]: value };
+  const cost = toNumber(next.costPrice);
+  const sale = toNumber(next.salePrice);
+  const profit = toNumber(next.profitPercent);
+
+  if (field === 'costPrice') {
+    if (sale !== null && cost !== null) {
+      const pct = calcProfitPercent(sale, cost);
+      next.profitPercent = pct === null ? '' : formatNumber(pct);
+    } else if (profit !== null && cost !== null) {
+      const computedSale = calcSaleFromProfit(cost, profit);
+      next.salePrice = formatNumber(computedSale);
+    }
+  }
+
+  if (field === 'salePrice') {
+    if (cost !== null && sale !== null) {
+      const pct = calcProfitPercent(sale, cost);
+      next.profitPercent = pct === null ? '' : formatNumber(pct);
+    } else if (profit !== null && sale !== null) {
+      const computedCost = calcCostFromProfit(sale, profit);
+      next.costPrice = formatNumber(computedCost);
+    }
+  }
+
+  if (field === 'profitPercent') {
+    if (cost !== null && profit !== null) {
+      const computedSale = calcSaleFromProfit(cost, profit);
+      next.salePrice = formatNumber(computedSale);
+    } else if (sale !== null && profit !== null) {
+      const computedCost = calcCostFromProfit(sale, profit);
+      next.costPrice = formatNumber(computedCost);
+    }
+  }
+
+  return next;
+};
+
 const getText = (parent: Element, tag: string) => {
   const direct = parent.getElementsByTagName(tag);
   if (direct.length) return direct[0].textContent?.trim() || '';
@@ -251,11 +340,13 @@ export default function ImportarProdutosPage() {
       const ncm = pick(['ncm']);
       const cest = pick(['cest']);
       const origin = pick(['origem', 'origin']);
-      const price = pick(['preco', 'valor', 'valorunitario', 'vuncom', 'precounitario']);
+      const salePrice = pick(['precovenda', 'preco', 'valor', 'valorunitario', 'vuncom', 'precounitario', 'venda']);
+      const costPrice = pick(['precoentrada', 'precocusto', 'custo', 'custounitario', 'valorcusto', 'valorentrada', 'entrada']);
+      const profitPercent = pick(['lucro', 'margem', 'margemlucro', 'markup']);
       const stock = pick(['estoque', 'quantidade', 'qtd']);
       const barcode = pick(['barcode', 'barras', 'cean', 'codean']);
 
-      return {
+      const baseItem = {
         id: `excel-${index}`,
         include: true,
         name: String(name || '').trim(),
@@ -264,12 +355,16 @@ export default function ImportarProdutosPage() {
         cest: String(cest || '').trim(),
         taxType: 'TRIBUTADO',
         origin: String(origin || '').trim(),
-        price: parseNumber(price),
+        salePrice: parseNumber(salePrice),
+        costPrice: parseNumber(costPrice),
+        profitPercent: parseNumber(profitPercent),
         stock: parseNumber(stock),
         barcode: String(barcode || '').trim(),
         categoryId: defaultCategoryId || undefined,
         source: 'Excel'
       } as ImportItem;
+
+      return normalizePricing(baseItem);
     });
 
     setItems(mapped);
@@ -298,7 +393,9 @@ export default function ImportarProdutosPage() {
           cest: '',
           taxType: 'TRIBUTADO',
           origin: '',
-          price: '',
+          salePrice: '',
+          costPrice: '',
+          profitPercent: '',
           stock: '0',
           barcode: '',
           categoryId: defaultCategoryId || undefined,
@@ -327,15 +424,16 @@ export default function ImportarProdutosPage() {
         cest,
         taxType: 'TRIBUTADO',
         origin,
-        price: parseNumber(price),
+        salePrice: parseNumber(price),
+        costPrice: '',
+        profitPercent: '',
         stock: '0',
         barcode,
         categoryId: defaultCategoryId || undefined,
         source: 'XML'
       } as ImportItem;
     });
-
-    setItems(mapped);
+    setItems(mapped.map((item) => normalizePricing(item)));
   };
 
   const handleFile = async (file: File | null) => {
@@ -354,7 +452,7 @@ export default function ImportarProdutosPage() {
     }
   };
 
-  const validateRow = (item: ImportItem) => {
+  const validateRow = useCallback((item: ImportItem) => {
     if (!item.include) return null;
     if (!item.name.trim()) return 'Nome obrigatório';
     if (!item.sku.trim()) return 'SKU obrigatório';
@@ -363,15 +461,16 @@ export default function ImportarProdutosPage() {
     if (!item.taxType) return 'Tributação obrigatória';
     if (!item.origin) return 'Origem obrigatória';
     if (!item.categoryId && !defaultCategoryId) return 'Categoria obrigatória';
+    if (toNumber(item.salePrice) === null) return 'Preço de venda obrigatório';
     return null;
-  };
+  }, [defaultCategoryId]);
 
   const stats = useMemo(() => {
     const total = items.length;
     const selected = items.filter((item) => item.include).length;
     const withError = items.filter((item) => validateRow(item)).length;
     return { total, selected, withError };
-  }, [items, defaultCategoryId]);
+  }, [items, validateRow]);
 
   const canImport = stats.selected > 0 && !importing;
 
@@ -407,12 +506,13 @@ export default function ImportarProdutosPage() {
       const results: { ok: number; fail: number } = { ok: 0, fail: 0 };
 
       for (const item of rows) {
-        const errorRow = validateRow(item);
+        const normalizedItem = normalizePricing(item);
+        const errorRow = validateRow(normalizedItem);
         if (errorRow) {
           results.fail += 1;
           continue;
         }
-        const categoryId = item.categoryId || resolvedCategoryId;
+        const categoryId = normalizedItem.categoryId || resolvedCategoryId;
         if (!categoryId) {
           results.fail += 1;
           continue;
@@ -423,15 +523,16 @@ export default function ImportarProdutosPage() {
             {
               method: 'POST',
               body: JSON.stringify({
-                name: item.name.trim(),
-                sku: item.sku.trim(),
-                ncm: item.ncm.trim(),
-                cest: item.cest.trim() || undefined,
-                taxType: item.taxType,
-                origin: Number(item.origin),
-                stock: Number(item.stock || 0),
-                price: Number(item.price || 0),
-                barcode: item.barcode.trim() || undefined,
+                name: normalizedItem.name.trim(),
+                sku: normalizedItem.sku.trim(),
+                ncm: normalizedItem.ncm.trim(),
+                cest: normalizedItem.cest.trim() || undefined,
+                taxType: normalizedItem.taxType,
+                origin: Number(normalizedItem.origin),
+                stock: Number(normalizedItem.stock || 0),
+                price: Number(normalizedItem.salePrice || 0),
+                costPrice: normalizedItem.costPrice ? Number(normalizedItem.costPrice) : undefined,
+                barcode: normalizedItem.barcode.trim() || undefined,
                 categoryId
               })
             },
@@ -770,7 +871,7 @@ export default function ImportarProdutosPage() {
             ) : (
               <>
                 <div className="pl-table-wrap" style={{ background: tk.surface, border: `1px solid ${tk.border}`, borderRadius: '12px', overflowX: 'auto', overflowY: 'hidden', boxShadow: 'var(--shadow)', margin: '16px 20px' }}>
-                  <table className="pl-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1100px' }}>
+                  <table className="pl-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1300px' }}>
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${tk.surface}` }}>
                         {(
@@ -782,7 +883,9 @@ export default function ImportarProdutosPage() {
                             { label: 'CEST', width: '80px' },
                             { label: 'Tributação', width: '130px' },
                             { label: 'Origem', width: '90px' },
-                            { label: 'Preço', width: '90px' },
+                            { label: 'Preço entrada', width: '110px' },
+                            { label: 'Preço venda', width: '110px' },
+                            { label: 'Lucro %', width: '90px' },
                             { label: 'Estoque', width: '90px' },
                             { label: 'Categoria', width: '160px' },
                             { label: 'Origem arquivo', width: '130px' },
@@ -932,11 +1035,37 @@ export default function ImportarProdutosPage() {
                             <td style={{ padding: '10px 14px' }}>
                               <input
                                 className="table-input"
-                                value={item.price}
+                                value={item.costPrice}
                                 onChange={(event) =>
                                   setItems((current) =>
                                     current.map((row) =>
-                                      row.id === item.id ? { ...row, price: event.target.value } : row
+                                      row.id === item.id ? updatePricingField(row, 'costPrice', event.target.value) : row
+                                    )
+                                  )
+                                }
+                              />
+                            </td>
+                            <td style={{ padding: '10px 14px' }}>
+                              <input
+                                className="table-input"
+                                value={item.salePrice}
+                                onChange={(event) =>
+                                  setItems((current) =>
+                                    current.map((row) =>
+                                      row.id === item.id ? updatePricingField(row, 'salePrice', event.target.value) : row
+                                    )
+                                  )
+                                }
+                              />
+                            </td>
+                            <td style={{ padding: '10px 14px' }}>
+                              <input
+                                className="table-input"
+                                value={item.profitPercent}
+                                onChange={(event) =>
+                                  setItems((current) =>
+                                    current.map((row) =>
+                                      row.id === item.id ? updatePricingField(row, 'profitPercent', event.target.value) : row
                                     )
                                   )
                                 }
@@ -1125,12 +1254,38 @@ export default function ImportarProdutosPage() {
                         <div className="form-grid">
                           <input
                             className="table-input"
-                            value={item.price}
-                            placeholder="Preço"
+                            value={item.costPrice}
+                            placeholder="Preço entrada"
                             onChange={(event) =>
                               setItems((current) =>
                                 current.map((row) =>
-                                  row.id === item.id ? { ...row, price: event.target.value } : row
+                                  row.id === item.id ? updatePricingField(row, 'costPrice', event.target.value) : row
+                                )
+                              )
+                            }
+                          />
+                          <input
+                            className="table-input"
+                            value={item.salePrice}
+                            placeholder="Preço venda"
+                            onChange={(event) =>
+                              setItems((current) =>
+                                current.map((row) =>
+                                  row.id === item.id ? updatePricingField(row, 'salePrice', event.target.value) : row
+                                )
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="form-grid">
+                          <input
+                            className="table-input"
+                            value={item.profitPercent}
+                            placeholder="Lucro %"
+                            onChange={(event) =>
+                              setItems((current) =>
+                                current.map((row) =>
+                                  row.id === item.id ? updatePricingField(row, 'profitPercent', event.target.value) : row
                                 )
                               )
                             }

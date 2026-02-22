@@ -53,6 +53,12 @@ export class UpdateProductDto {
   price?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  costPrice?: number;
+
+  @IsOptional()
   @IsString()
   @MaxLength(80)
   barcode?: string;
