@@ -550,7 +550,7 @@ export default function EmpresaConfigPage() {
           </div>
         </div>
 
-        <div style={{ background: tk.surface, border: `1px solid ${tk.border}`, borderRadius: '12px', overflow: 'hidden', boxShadow: tk.shadow }}>
+        {/* <div style={{ background: tk.surface, border: `1px solid ${tk.border}`, borderRadius: '12px', overflow: 'hidden', boxShadow: tk.shadow }}>
           <div style={{ padding: '20px 24px', borderBottom: `1px solid ${tk.border}` }}>
             <div style={{ fontSize: '15px', fontWeight: '600', color: tk.text }}>Configurações fiscais</div>
             <div style={{ fontSize: '12.5px', color: tk.textSub, marginTop: '2px' }}>Acesse as telas de alíquotas e regras fiscais.</div>
@@ -560,7 +560,7 @@ export default function EmpresaConfigPage() {
             <a className="btn ghost" href="/regras-fiscais">Regras fiscais</a>
             <a className="btn ghost" href="/simulador">Simulador</a>
           </div>
-        </div>
+        </div> */}
 
         {user.role === 'SUPER_ADMIN' ? (
           <div style={{ background: tk.surface, border: `1px solid ${tk.border}`, borderRadius: '12px', overflow: 'hidden', boxShadow: tk.shadow }}>
