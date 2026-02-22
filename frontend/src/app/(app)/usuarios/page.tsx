@@ -12,8 +12,14 @@ type User = {
   name?: string | null;
   role: string;
   avatarUrl?: string | null;
+  companyId?: string | null;
   companyName?: string | null;
   createdAt?: string;
+};
+
+type Company = {
+  id: string;
+  tradeName: string;
 };
 
 const Ic = {
@@ -32,6 +38,47 @@ const Ic = {
   ),
 };
 
+function Field({ label, children, hint, tk }: { label: string; children: React.ReactNode; hint?: string; tk: { textSub: string; textMuted: string } }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <label style={{ fontSize: '12.5px', fontWeight: '500', color: tk.textSub, fontFamily: 'var(--pl-font)' }}>{label}</label>
+      {children}
+      {hint ? <span style={{ fontSize: '11.5px', color: tk.textMuted }}>{hint}</span> : null}
+    </div>
+  );
+}
+
+function Select({ value, onChange, options, tk }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[]; tk: { text: string; textMuted: string; border: string; surface: string; accent: string } }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={{
+        width: '100%',
+        padding: '10px 12px',
+        background: tk.surface,
+        border: `1px solid ${focused ? tk.accent : tk.border}`,
+        borderRadius: '8px',
+        fontSize: '13px',
+        color: value ? tk.text : tk.textMuted,
+        fontFamily: 'var(--pl-font)',
+        outline: 'none',
+        cursor: 'pointer',
+        appearance: 'none',
+      }}
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 export default function UsuariosPage() {
   const { token, user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
@@ -39,6 +86,13 @@ export default function UsuariosPage() {
   const [message, setMessage] = useState('');
   const [resetLink, setResetLink] = useState('');
   const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editRole, setEditRole] = useState('');
+  const [editCompanyId, setEditCompanyId] = useState('');
+  const [editError, setEditError] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [companies, setCompanies] = useState<Company[]>([]);
 
   const tk = useMemo(
     () => ({
@@ -48,7 +102,9 @@ export default function UsuariosPage() {
       border: 'var(--border)',
       text: 'var(--ink)',
       textSub: 'var(--muted)',
+      textMuted: 'var(--muted)',
       accent: 'var(--accent)',
+      accentDark: 'var(--accent-dark)',
       chipBg: 'var(--sidebar-active-bg)',
       chipText: 'var(--accent-dark)',
       shadow: 'var(--shadow)',
@@ -71,6 +127,62 @@ export default function UsuariosPage() {
     loadUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  useEffect(() => {
+    const loadCompanies = async () => {
+      if (!token || user?.role !== 'SUPER_ADMIN') return;
+      try {
+        const data = await apiRequest<Company[]>('/companies', {}, token);
+        setCompanies(data);
+      } catch (err) {
+        setMessage(err instanceof Error ? err.message : 'Erro ao carregar empresas');
+      }
+    };
+    loadCompanies();
+  }, [token, user?.role]);
+
+  const openEditModal = (item: User) => {
+    setEditUser(item);
+    setEditRole(item.role);
+    setEditCompanyId(item.companyId || '');
+    setEditError('');
+    setEditModalOpen(true);
+  };
+
+  const saveEdit = async () => {
+    if (!token || !editUser) return;
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const payload: Record<string, any> = {};
+      if (editRole && editRole !== editUser.role) {
+        payload.role = editRole;
+      }
+      if (user?.role === 'SUPER_ADMIN') {
+        const nextCompanyId = editCompanyId ? editCompanyId : null;
+        if ((editUser.companyId ?? null) !== nextCompanyId) {
+          payload.companyId = nextCompanyId;
+        }
+      }
+
+      if (Object.keys(payload).length) {
+        await apiRequest(
+          `/users/${editUser.id}`,
+          { method: 'PUT', body: JSON.stringify(payload) },
+          token
+        );
+        setMessage('Usuário atualizado.');
+        await loadUsers();
+      }
+
+      setEditModalOpen(false);
+      setEditUser(null);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Erro ao atualizar usuário');
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   const generateResetLink = async (id: string) => {
     if (!token) return;
@@ -184,16 +296,21 @@ export default function UsuariosPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((item, idx) => (
-                    <tr
-                      key={item.id}
-                      className="pl-tr"
-                      style={{
-                        borderBottom: idx < users.length - 1 ? `1px solid ${tk.surfaceAlt}` : 'none',
-                        background: tk.surface,
-                        transition: 'background 0.12s',
-                      }}
-                    >
+                  {users.map((item, idx) => {
+                    const canManage =
+                      user?.role === 'SUPER_ADMIN' ||
+                      (user?.role === 'COMPANY_ADMIN' && item.role !== 'SUPER_ADMIN');
+
+                    return (
+                      <tr
+                        key={item.id}
+                        className="pl-tr"
+                        style={{
+                          borderBottom: idx < users.length - 1 ? `1px solid ${tk.surfaceAlt}` : 'none',
+                          background: tk.surface,
+                          transition: 'background 0.12s',
+                        }}
+                      >
                       <td style={{ padding: '10px 14px' }}>
                         <div style={{
                           width: '34px', height: '34px', borderRadius: '8px',
@@ -220,26 +337,43 @@ export default function UsuariosPage() {
                       <td style={{ padding: '10px 14px', fontSize: '12.5px', color: tk.textSub }}>{item.companyName || '-'}</td>
                       <td style={{ padding: '10px 14px', fontSize: '12px', color: tk.textSub }}>{item.createdAt?.slice(0, 10) || '-'}</td>
                       <td style={{ padding: '10px 14px' }}>
-                        {(user?.role === 'SUPER_ADMIN' || user?.role === 'COMPANY_ADMIN') ? (
-                          <button
-                            onClick={() => generateResetLink(item.id)}
-                            style={{
-                              padding: '6px 10px', background: tk.surfaceAlt, border: `1px solid ${tk.border}`,
-                              borderRadius: '8px', fontSize: '12px', color: tk.text, cursor: 'pointer',
-                            }}
-                          >
-                            Reset senha
-                          </button>
+                        {canManage ? (
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => openEditModal(item)}
+                              style={{
+                                padding: '6px 10px', background: tk.surfaceAlt, border: `1px solid ${tk.border}`,
+                                borderRadius: '8px', fontSize: '12px', color: tk.text, cursor: 'pointer',
+                              }}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => generateResetLink(item.id)}
+                              style={{
+                                padding: '6px 10px', background: tk.surfaceAlt, border: `1px solid ${tk.border}`,
+                                borderRadius: '8px', fontSize: '12px', color: tk.text, cursor: 'pointer',
+                              }}
+                            >
+                              Reset senha
+                            </button>
+                          </div>
                         ) : null}
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                 </tbody>
               </table>
 
               <div className="pl-cards" style={{ display: 'none', gap: '12px', padding: '16px' }}>
-                {users.map((item) => (
-                  <div key={item.id} style={{ border: `1px solid ${tk.border}`, borderRadius: '12px', padding: '12px', display: 'grid', gap: '10px', background: tk.surface }}>
+                {users.map((item) => {
+                  const canManage =
+                    user?.role === 'SUPER_ADMIN' ||
+                    (user?.role === 'COMPANY_ADMIN' && item.role !== 'SUPER_ADMIN');
+
+                  return (
+                    <div key={item.id} style={{ border: `1px solid ${tk.border}`, borderRadius: '12px', padding: '12px', display: 'grid', gap: '10px', background: tk.surface }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: tk.surfaceAlt, border: `1px solid ${tk.border}`, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {item.avatarUrl ? (
@@ -259,16 +393,25 @@ export default function UsuariosPage() {
                     <span style={{ fontSize: '12px', color: tk.text, background: tk.surfaceAlt, padding: '3px 8px', borderRadius: '20px', width: 'fit-content' }}>{item.role}</span>
                     <div style={{ fontSize: '12px', color: tk.textSub }}>Empresa: {item.companyName || '-'}</div>
                     <div style={{ fontSize: '12px', color: tk.textSub }}>Criado: {item.createdAt?.slice(0, 10) || '-'}</div>
-                    {(user?.role === 'SUPER_ADMIN' || user?.role === 'COMPANY_ADMIN') ? (
-                      <button
-                        onClick={() => generateResetLink(item.id)}
-                        style={{ padding: '6px 10px', background: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: '8px', fontSize: '12px', color: tk.text, cursor: 'pointer', width: 'fit-content' }}
-                      >
-                        Reset senha
-                      </button>
+                    {canManage ? (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => openEditModal(item)}
+                          style={{ padding: '6px 10px', background: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: '8px', fontSize: '12px', color: tk.text, cursor: 'pointer', width: 'fit-content' }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => generateResetLink(item.id)}
+                          style={{ padding: '6px 10px', background: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: '8px', fontSize: '12px', color: tk.text, cursor: 'pointer', width: 'fit-content' }}
+                        >
+                          Reset senha
+                        </button>
+                      </div>
                     ) : null}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
@@ -298,6 +441,61 @@ export default function UsuariosPage() {
         >
           <div className="secret-box">
             <p>{resetLink}</p>
+          </div>
+        </Modal>
+      )}
+
+      {editModalOpen && editUser && (
+        <Modal
+          title="Editar usuário"
+          subtitle={editUser.email}
+          onClose={() => setEditModalOpen(false)}
+          footer={
+            <div className="modal-actions">
+              <button className="btn ghost" onClick={() => setEditModalOpen(false)} disabled={editSaving}>
+                Cancelar
+              </button>
+              <button className="btn primary" onClick={saveEdit} disabled={editSaving}>
+                {editSaving ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {editError ? <div className="message error">{editError}</div> : null}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Field label="Role" tk={tk}>
+                <Select
+                  value={editRole}
+                  onChange={setEditRole}
+                  options={[
+                    { value: 'COMPANY_USER', label: 'COMPANY_USER' },
+                    { value: 'COMPANY_ADMIN', label: 'COMPANY_ADMIN' },
+                    ...(user?.role === 'SUPER_ADMIN' ? [{ value: 'SUPER_ADMIN', label: 'SUPER_ADMIN' }] : []),
+                  ]}
+                  tk={tk}
+                />
+              </Field>
+              {user?.role === 'SUPER_ADMIN' ? (
+                <Field label="Empresa" tk={tk} hint="Opcional para SUPER_ADMIN.">
+                  <Select
+                    value={editCompanyId}
+                    onChange={setEditCompanyId}
+                    options={[
+                      { value: '', label: 'Sem empresa' },
+                      ...companies.map((c) => ({ value: c.id, label: c.tradeName })),
+                    ]}
+                    tk={tk}
+                  />
+                </Field>
+              ) : (
+                <Field label="Empresa" tk={tk}>
+                  <div style={{ padding: '10px 12px', background: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: '8px', fontSize: '13px', color: tk.text }}>
+                    {editUser.companyName || '-'}
+                  </div>
+                </Field>
+              )}
+            </div>
           </div>
         </Modal>
       )}
