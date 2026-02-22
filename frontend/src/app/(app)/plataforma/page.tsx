@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiRequest } from '../../../lib/api';
+import { apiRequest, apiUpload, fileUrl } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
 
 type PlatformSettings = {
   id: number;
   platformName: string;
   platformDescription?: string | null;
+  faviconUrl?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
   paymentGateway?: string | null;
@@ -90,6 +91,9 @@ export default function PlataformaPage() {
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [platformName, setPlatformName] = useState('');
   const [platformDescription, setPlatformDescription] = useState('');
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+  const [faviconDragActive, setFaviconDragActive] = useState(false);
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [paymentGateway, setPaymentGateway] = useState('');
@@ -99,6 +103,16 @@ export default function PlataformaPage() {
   const [error, setError] = useState('');
 
   const tk = tokens();
+
+  useEffect(() => {
+    if (!faviconFile) {
+      setFaviconPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(faviconFile);
+    setFaviconPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [faviconFile]);
 
   const loadSettings = async () => {
     if (!token) return;
@@ -123,7 +137,7 @@ export default function PlataformaPage() {
     setMessage('');
     setError('');
     try {
-      const updated = await apiRequest<PlatformSettings>(
+      await apiRequest<PlatformSettings>(
         '/platform-settings',
         {
           method: 'PUT',
@@ -139,12 +153,22 @@ export default function PlataformaPage() {
         },
         token
       );
-      setSettings(updated);
+
+      if (faviconFile) {
+        const formData = new FormData();
+        formData.append('file', faviconFile);
+        await apiUpload('/platform-settings/favicon', formData, token);
+        setFaviconFile(null);
+      }
+
+      await loadSettings();
       setMessage('Configurações atualizadas.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar configurações');
     }
   };
+
+  const faviconUrl = faviconPreview || (settings?.faviconUrl ? fileUrl(settings.faviconUrl) : '');
 
   if (user?.role !== 'SUPER_ADMIN') {
     return (
@@ -199,6 +223,66 @@ export default function PlataformaPage() {
             </Field>
             <Field label="Descrição" tk={tk}>
               <Input value={platformDescription} onChange={setPlatformDescription} placeholder="Descrição exibida no metadata" tk={tk} />
+            </Field>
+            <Field label="Favicon" tk={tk} hint="Arraste ou selecione a imagem que aparecerá no navegador.">
+              <div
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setFaviconDragActive(true);
+                }}
+                onDragLeave={() => setFaviconDragActive(false)}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setFaviconDragActive(false);
+                  const file = event.dataTransfer.files?.[0] || null;
+                  setFaviconFile(file);
+                }}
+                style={{
+                  border: `1px dashed ${faviconDragActive ? tk.accent : tk.border}`,
+                  background: faviconDragActive ? `${tk.accent}12` : tk.inputMuted,
+                  borderRadius: '10px',
+                  padding: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}
+              >
+                <input
+                  id="platform-favicon"
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => setFaviconFile(event.target.files?.[0] || null)}
+                  style={{ display: 'none' }}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{
+                    width: '42px', height: '42px', borderRadius: '10px',
+                    background: tk.surface, border: `1px solid ${tk.border}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                  }}>
+                    {faviconUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={faviconUrl} alt="Favicon" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: '11.5px', color: tk.textSub }}>Ícone</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '12px', color: tk.textSub }}>
+                    {faviconFile ? faviconFile.name : 'Arraste ou selecione o arquivo'}
+                  </div>
+                </div>
+                <label
+                  htmlFor="platform-favicon"
+                  style={{
+                    padding: '6px 10px', background: tk.surface,
+                    border: `1px solid ${tk.border}`, borderRadius: '8px',
+                    color: tk.text, cursor: 'pointer', fontSize: '12px', fontWeight: '600',
+                  }}
+                >
+                  Selecionar
+                </label>
+              </div>
             </Field>
           </div>
         </div>

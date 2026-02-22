@@ -11,6 +11,9 @@ export class PlatformSetting {
   @Column({ name: 'platform_description', type: 'varchar', length: 255, nullable: true })
   platformDescription?: string | null;
 
+  @Column({ name: 'favicon_url', type: 'varchar', length: 255, nullable: true })
+  faviconUrl?: string | null;
+
   @Column({ name: 'contact_email', type: 'varchar', length: 255, nullable: true })
   contactEmail?: string | null;
 

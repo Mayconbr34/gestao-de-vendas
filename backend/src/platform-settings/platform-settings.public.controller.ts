@@ -11,6 +11,7 @@ export class PlatformSettingsPublicController {
     return {
       platformName: settings.platformName,
       platformDescription: settings.platformDescription ?? null,
+      faviconUrl: settings.faviconUrl ?? null,
       contactEmail: settings.contactEmail ?? null,
       contactPhone: settings.contactPhone ?? null,
       paymentGateway: settings.paymentGateway ?? null,

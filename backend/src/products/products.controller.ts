@@ -45,6 +45,12 @@ export class ProductsController {
     return this.productsService.findAll(requester?.companyId ?? null);
   }
 
+  @Get(':id')
+  async getById(@Param('id') id: string, @Req() req: Request) {
+    const requester = (req as any).user as { role?: UserRole; companyId?: string | null };
+    return this.productsService.findById(id, requester);
+  }
+
   @Post()
   async create(@Body() dto: CreateProductDto, @Req() req: Request) {
     const requester = (req as any).user as { role?: UserRole; companyId?: string | null };

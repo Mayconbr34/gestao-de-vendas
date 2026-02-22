@@ -475,6 +475,13 @@ export class MigrationsService implements OnApplicationBootstrap {
         `);
       });
 
+      await runMigration('platform_028', async () => {
+        await queryRunner.query(`
+          ALTER TABLE platform_settings
+          ADD COLUMN IF NOT EXISTS favicon_url VARCHAR(255);
+        `);
+      });
+
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();

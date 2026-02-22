@@ -12,6 +12,10 @@ export class UpdatePlatformSettingDto {
 
   @IsOptional()
   @IsString()
+  faviconUrl?: string;
+
+  @IsOptional()
+  @IsString()
   contactEmail?: string;
 
   @IsOptional()

@@ -1,14 +1,29 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { apiRequest, apiUpload } from '../../../../lib/api';
+import { useParams, useRouter } from 'next/navigation';
+import { apiRequest, apiUpload, fileUrl } from '../../../../lib/api';
 import { useAuth } from '../../../../lib/auth';
 
 /* ─── Types ────────────────────────────────────────────── */
 
 type Category = { id: string; name: string };
 type Product = { id: string };
+type ProductDetail = {
+  id: string;
+  name: string;
+  sku?: string | null;
+  stock: number;
+  price: number;
+  barcode?: string | null;
+  ncm?: string | null;
+  cest?: string | null;
+  origin?: number | null;
+  taxType?: string | null;
+  categoryId?: string | null;
+  categoryName?: string | null;
+  imageUrl?: string | null;
+};
 
 /* ─── Constants ─────────────────────────────────────────── */
 
@@ -241,11 +256,16 @@ function Select({
 export default function NovoProdutoPage() {
   const { token } = useAuth();
   const router = useRouter();
+  const params = useParams();
+  const productId = typeof (params as { id?: string })?.id === 'string' ? (params as { id?: string }).id : null;
+  const isEdit = Boolean(productId);
   const [categories, setCategories] = useState<Category[]>([]);
   const [message, setMessage] = useState('');
   const [formError, setFormError] = useState('');
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [productLoading, setProductLoading] = useState(false);
+  const [productImageUrl, setProductImageUrl] = useState<string | null>(null);
 
   // Form fields
   const [name, setName] = useState('');
@@ -277,6 +297,36 @@ export default function NovoProdutoPage() {
     apiRequest<Category[]>('/categories', {}, token).then(setCategories).catch(() => {});
   }, [token]);
 
+  useEffect(() => {
+    if (!token || !productId) return;
+    setProductLoading(true);
+    apiRequest<ProductDetail>(`/products/${productId}`, {}, token)
+      .then((data) => {
+        setName(data.name || '');
+        setSku(data.sku || '');
+        setStock(String(data.stock ?? ''));
+        setPrice(String(data.price ?? ''));
+        setBarcode(data.barcode || '');
+        setNcm(data.ncm || '');
+        setCest(data.cest || '');
+        setOrigin(
+          data.origin !== null && data.origin !== undefined ? String(data.origin) : ''
+        );
+        setTaxType(data.taxType || '');
+        setCategoryId(data.categoryId || null);
+        setCategoryQuery(data.categoryName || '');
+        setShowSuggestions(false);
+        setImageFile(null);
+        setImagePreview(null);
+        setProductImageUrl(data.imageUrl ?? null);
+        setStep(1);
+      })
+      .catch((err) => {
+        setFormError(err instanceof Error ? err.message : 'Erro ao carregar produto');
+      })
+      .finally(() => setProductLoading(false));
+  }, [token, productId]);
+
   const isValidNcm = /^\d{8}$/.test(ncm.trim());
   const isValidCest = !cest.trim() || /^\d{7}$/.test(cest.trim());
 
@@ -285,9 +335,10 @@ export default function NovoProdutoPage() {
     setNcm(''); setCest(''); setOrigin(''); setTaxType(''); setCategoryQuery('');
     setCategoryId(null); setShowSuggestions(false); setStep(1);
     setImageFile(null); setImagePreview(null);
+    setProductImageUrl(null);
   };
 
-  const createProduct = async () => {
+  const saveProduct = async () => {
     if (!token) return;
     setMessage(''); setFormError('');
     try {
@@ -301,35 +352,74 @@ export default function NovoProdutoPage() {
 
       if (!resolvedCategoryId) {
         if (!trimmedCategory) { setFormError('Informe a categoria.'); return; }
-        const created = await apiRequest<Category>('/categories', { method: 'POST', body: JSON.stringify({ name: trimmedCategory }) }, token);
+        const created = await apiRequest<Category>(
+          '/categories',
+          { method: 'POST', body: JSON.stringify({ name: trimmedCategory }) },
+          token
+        );
         resolvedCategoryId = created.id;
       }
 
       if (!resolvedCategoryId) { setFormError('Selecione uma categoria.'); return; }
 
       setSaving(true);
-      const created = await apiRequest<Product>('/products', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: name.trim(), sku: sku.trim(), ncm: ncm.trim(),
-          cest: cest.trim() || undefined, origin: Number(origin),
-          stock: Number(stock), price: Number(price),
-          barcode: barcode.trim() || undefined, categoryId: resolvedCategoryId,
-          taxType,
-        }),
-      }, token);
+      if (isEdit && productId) {
+        await apiRequest(
+          `/products/${productId}`,
+          {
+            method: 'PUT',
+            body: JSON.stringify({
+              name: name.trim(),
+              sku: sku.trim(),
+              ncm: ncm.trim(),
+              cest: cest.trim() || undefined,
+              origin: Number(origin),
+              stock: Number(stock),
+              price: Number(price),
+              barcode: barcode.trim() || undefined,
+              categoryId: resolvedCategoryId,
+              taxType,
+            }),
+          },
+          token
+        );
 
-      if (imageFile) {
-        const formData = new FormData();
-        formData.append('file', imageFile);
-        await apiUpload(`/products/${created.id}/image`, formData, token);
+        if (imageFile) {
+          const formData = new FormData();
+          formData.append('file', imageFile);
+          await apiUpload(`/products/${productId}/image`, formData, token);
+        }
+
+        setMessage('Produto atualizado com sucesso.');
+        router.push('/produtos');
+      } else {
+        const created = await apiRequest<Product>(
+          '/products',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              name: name.trim(), sku: sku.trim(), ncm: ncm.trim(),
+              cest: cest.trim() || undefined, origin: Number(origin),
+              stock: Number(stock), price: Number(price),
+              barcode: barcode.trim() || undefined, categoryId: resolvedCategoryId,
+              taxType,
+            }),
+          },
+          token
+        );
+
+        if (imageFile) {
+          const formData = new FormData();
+          formData.append('file', imageFile);
+          await apiUpload(`/products/${created.id}/image`, formData, token);
+        }
+
+        resetForm();
+        setMessage('Produto criado com sucesso.');
+        router.push('/produtos');
       }
-
-      resetForm();
-      setMessage('Produto criado com sucesso.');
-      router.push('/produtos');
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Erro ao criar produto');
+      setFormError(err instanceof Error ? err.message : 'Erro ao salvar produto');
     } finally {
       setSaving(false);
     }
@@ -348,7 +438,30 @@ export default function NovoProdutoPage() {
     return (value?: number | null) => (value === null || value === undefined ? '—' : map.get(String(value)) || String(value));
   }, []);
 
+  const resolvedImagePreview = imagePreview || (productImageUrl ? fileUrl(productImageUrl) : '');
+
   // ── Render ──
+
+  if (isEdit && productLoading) {
+    return (
+      <div style={{ background: tk.bg, minHeight: '100%', padding: 0, fontFamily: 'var(--np-font)' }}>
+        <div style={{ width: '100%', margin: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <div style={{ fontSize: '22px', fontWeight: '700', color: tk.text, letterSpacing: '-0.03em' }}>
+              Editar produto
+            </div>
+            <div style={{ fontSize: '13.5px', color: tk.textSub, marginTop: '4px' }}>
+              Carregando dados do produto...
+            </div>
+          </div>
+          <div className="empty-state">
+            <strong>Carregando produto</strong>
+            <span>Estamos buscando os dados para edição.</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background: tk.bg, minHeight: '100%', padding: 0, fontFamily: 'var(--np-font)', transition: 'background 0.2s' }}>
@@ -371,7 +484,7 @@ export default function NovoProdutoPage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <div style={{ fontSize: '22px', fontWeight: '700', color: tk.text, letterSpacing: '-0.03em' }}>
-              Cadastrar produto
+              {isEdit ? 'Editar produto' : 'Cadastrar produto'}
             </div>
             <div style={{ fontSize: '13.5px', color: tk.textSub, marginTop: '4px' }}>
               Preencha os dados de catálogo e informações fiscais do item.
@@ -554,9 +667,9 @@ export default function NovoProdutoPage() {
                       border: `1px solid ${tk.border}`, borderRadius: '10px',
                       overflow: 'hidden', minHeight: '120px',
                     }}>
-                      {imagePreview ? (
+                      {resolvedImagePreview ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={resolvedImagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <span style={{ fontSize: '12px', color: tk.textMuted }}>Prévia da imagem</span>
                       )}
@@ -736,7 +849,7 @@ export default function NovoProdutoPage() {
                 </button>
               ) : (
                 <button
-                  onClick={createProduct}
+                  onClick={saveProduct}
                   disabled={!canContinueCategory || saving}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '7px',
@@ -749,7 +862,7 @@ export default function NovoProdutoPage() {
                     transition: 'all 0.15s', opacity: saving ? 0.7 : 1,
                   }}
                 >
-                  {Ic.save} {saving ? 'Salvando...' : 'Salvar produto'}
+                  {Ic.save} {saving ? 'Salvando...' : isEdit ? 'Salvar alterações' : 'Salvar produto'}
                 </button>
               )}
             </div>

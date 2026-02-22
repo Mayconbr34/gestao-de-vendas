@@ -3,6 +3,7 @@ import { apiRequest } from './api';
 export type PublicPlatformSettings = {
   platformName: string;
   platformDescription?: string | null;
+  faviconUrl?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
   paymentGateway?: string | null;

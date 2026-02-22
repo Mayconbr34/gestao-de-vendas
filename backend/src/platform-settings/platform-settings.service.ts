@@ -17,6 +17,7 @@ export class PlatformSettingsService {
     const created = this.settingsRepository.create({
       platformName: 'Projeto Integrador',
       platformDescription: 'Frontend Next.js para o sistema web',
+      faviconUrl: null,
       contactEmail: null,
       contactPhone: null,
       paymentGateway: null,
@@ -31,6 +32,7 @@ export class PlatformSettingsService {
     if (dto.platformName !== undefined) current.platformName = dto.platformName;
     if (dto.platformDescription !== undefined)
       current.platformDescription = dto.platformDescription ?? null;
+    if (dto.faviconUrl !== undefined) current.faviconUrl = dto.faviconUrl ?? null;
     if (dto.contactEmail !== undefined) current.contactEmail = dto.contactEmail ?? null;
     if (dto.contactPhone !== undefined) current.contactPhone = dto.contactPhone ?? null;
     if (dto.paymentGateway !== undefined)

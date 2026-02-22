@@ -67,6 +67,42 @@ export class ProductsService {
     }));
   }
 
+  async findById(
+    id: string,
+    requester?: { role?: UserRole; companyId?: string | null }
+  ) {
+    const product = await this.productsRepository.findOne({
+      where: { id },
+      relations: ['category']
+    });
+    if (!product) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+    if (requester?.role !== 'SUPER_ADMIN') {
+      if (!requester?.companyId || product.companyId !== requester.companyId) {
+        throw new ForbiddenException('Sem permissão');
+      }
+    }
+    return {
+      id: product.id,
+      name: product.name,
+      sku: product.sku ?? null,
+      ncm: product.ncm ?? null,
+      cest: product.cest ?? null,
+      origin: product.origin !== null && product.origin !== undefined ? Number(product.origin) : null,
+      stock: Number(product.stock),
+      price: Number(product.price),
+      barcode: product.barcode ?? null,
+      imageUrl: product.imageUrl ?? null,
+      taxType: product.taxType ?? null,
+      taxNcm: product.taxNcm ?? null,
+      taxCest: product.taxCest ?? null,
+      companyId: product.companyId ?? null,
+      categoryId: product.category?.id ?? null,
+      categoryName: product.category?.name ?? null
+    };
+  }
+
   async create(dto: CreateProductDto, companyId: string) {
     const category = await this.categoriesRepository.findOne({
       where: { id: dto.categoryId, companyId }

@@ -19,6 +19,13 @@ const space = Space_Grotesk({
 const FALLBACK_TITLE = 'Projeto Integrador';
 const FALLBACK_DESCRIPTION = 'Projeto Integrador - UNIVESP';
 
+const toAbsoluteUrl = (base: string, path?: string | null) => {
+  if (!path) return undefined;
+  if (path.startsWith('http')) return path;
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  return `${normalizedBase}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   try {
@@ -29,9 +36,11 @@ export async function generateMetadata(): Promise<Metadata> {
       throw new Error('Falha ao carregar configuração da plataforma.');
     }
     const data = await response.json();
+    const favicon = toAbsoluteUrl(apiBase, data.faviconUrl);
     return {
       title: data.platformName || FALLBACK_TITLE,
-      description: data.platformDescription || FALLBACK_DESCRIPTION
+      description: data.platformDescription || FALLBACK_DESCRIPTION,
+      ...(favicon ? { icons: { icon: favicon } } : {})
     };
   } catch {
     return {
