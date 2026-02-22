@@ -87,7 +87,7 @@ export class AuditsService {
     await this.auditsRepository.save(log);
   }
 
-  async list(companyId?: string | null) {
+  async list(params?: { companyId?: string | null; userId?: string | null }) {
     const qb = this.auditsRepository
       .createQueryBuilder('audit')
       .leftJoin('audit.user', 'user')
@@ -107,8 +107,10 @@ export class AuditsService {
       ])
       .orderBy('audit.created_at', 'DESC');
 
-    if (companyId) {
-      qb.where('audit.company_id = :companyId', { companyId });
+    if (params?.userId) {
+      qb.where('audit.user_id = :userId', { userId: params.userId });
+    } else if (params?.companyId) {
+      qb.where('audit.company_id = :companyId', { companyId: params.companyId });
     }
 
     const rows = await qb.getRawMany();

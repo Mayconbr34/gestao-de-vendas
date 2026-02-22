@@ -14,10 +14,13 @@ export class AuditsController {
 
   @Get()
   list(@Req() req: Request) {
-    const requester = (req as any).user as { role?: UserRole; companyId?: string | null };
+    const requester = (req as any).user as { role?: UserRole; companyId?: string | null; userId?: string };
     if (requester?.role === 'SUPER_ADMIN') {
       return this.auditsService.list();
     }
-    return this.auditsService.list(requester?.companyId ?? null);
+    if (requester?.role === 'COMPANY_USER') {
+      return this.auditsService.list({ userId: requester.userId });
+    }
+    return this.auditsService.list({ companyId: requester?.companyId ?? null });
   }
 }

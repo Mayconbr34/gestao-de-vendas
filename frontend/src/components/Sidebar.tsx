@@ -146,6 +146,11 @@ const companyChildren: NavItem[] = [
   { href: '/auditoria', label: 'Auditoria', icon: Icons.clock },
 ];
 
+const companyUserChildren: NavItem[] = [
+  { href: '/auditoria', label: 'Auditoria', icon: Icons.clock },
+  { href: '/simulador', label: 'Simulador', icon: Icons.zap },
+];
+
 const adminOpsChildren: NavItem[] = [
   { href: '/aliquotas', label: 'Alíquotas UF', icon: Icons.percent },
   { href: '/regras-fiscais', label: 'Regras fiscais', icon: Icons.shield },
@@ -291,31 +296,40 @@ function SidebarContent({
 
       {/* Nav */}
       <div className="sb-nav">
-        {primaryItems.map((item) => (
+        {role !== 'COMPANY_USER' && primaryItems.map((item) => (
           <NavLink key={item.href} {...item} active={pathname === item.href} />
         ))}
 
-        <SectionLabel>Catálogo</SectionLabel>
-        <NavGroup label="Produtos" icon={Icons.box} items={productChildren} pathname={pathname} defaultOpen />
-
-        <SectionLabel>{role !== 'SUPER_ADMIN' ? 'Empresa' : 'Operações'}</SectionLabel>
-        {role !== 'SUPER_ADMIN' ? (
-          <NavGroup label="Configurações" icon={Icons.building} items={companyChildren} pathname={pathname} defaultOpen />
-        ) : (
-          <NavGroup label="Operações" icon={Icons.shield} items={adminOpsChildren} pathname={pathname} defaultOpen />
-        )}
-
-        {role === 'SUPER_ADMIN' && (
+        {role === 'COMPANY_USER' ? (
           <>
-            <SectionLabel>Plataforma</SectionLabel>
-            <NavGroup label="Plataforma" icon={Icons.globe} items={platformChildren} pathname={pathname} defaultOpen />
+            <SectionLabel>Configurações</SectionLabel>
+            <NavGroup label="Configurações" icon={Icons.settings} items={companyUserChildren} pathname={pathname} defaultOpen />
+          </>
+        ) : (
+          <>
+            <SectionLabel>Catálogo</SectionLabel>
+            <NavGroup label="Produtos" icon={Icons.box} items={productChildren} pathname={pathname} defaultOpen />
+
+            <SectionLabel>{role !== 'SUPER_ADMIN' ? 'Empresa' : 'Operações'}</SectionLabel>
+            {role !== 'SUPER_ADMIN' ? (
+              <NavGroup label="Configurações" icon={Icons.building} items={companyChildren} pathname={pathname} defaultOpen />
+            ) : (
+              <NavGroup label="Operações" icon={Icons.shield} items={adminOpsChildren} pathname={pathname} defaultOpen />
+            )}
+
+            {role === 'SUPER_ADMIN' && (
+              <>
+                <SectionLabel>Plataforma</SectionLabel>
+                <NavGroup label="Plataforma" icon={Icons.globe} items={platformChildren} pathname={pathname} defaultOpen />
+              </>
+            )}
+
+            <SectionLabel>Usuário</SectionLabel>
+            {userChildren.map((item) => (
+              <NavLink key={item.href} {...item} active={pathname === item.href} />
+            ))}
           </>
         )}
-
-        <SectionLabel>Usuário</SectionLabel>
-        {userChildren.map((item) => (
-          <NavLink key={item.href} {...item} active={pathname === item.href} />
-        ))}
       </div>
 
       {/* User footer */}
