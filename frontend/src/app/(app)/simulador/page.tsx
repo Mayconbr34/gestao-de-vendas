@@ -257,12 +257,37 @@ export default function SimuladorPage() {
 
   const companyOptions = companies.map((company) => ({ value: company.id, label: company.tradeName }));
 
+  const displayValue = result?.mode ? result.mode : 'Aguardando';
+  const displayCode = result?.cst || result?.csosn || '--';
+
   return (
     <div style={{ background: tk.bg, minHeight: '100%', padding: 0, fontFamily: 'var(--np-font)' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
         :root { --np-font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
         *, *::before, *::after { box-sizing: border-box; }
+        .calc-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 16px; align-items: start; }
+        .calc-screen {
+          padding: 16px;
+          border-radius: 14px;
+          border: 1px solid var(--border);
+          background: linear-gradient(145deg, var(--card), var(--surface));
+          box-shadow: var(--shadow);
+          display: grid;
+          gap: 6px;
+        }
+        .calc-key {
+          border-radius: 12px;
+          border: 1px solid var(--border);
+          background: var(--surface);
+          padding: 10px;
+          display: grid;
+          gap: 4px;
+          min-height: 64px;
+        }
+        .calc-key span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+        .calc-key strong { font-size: 12.5px; color: var(--ink); font-weight: 600; }
+        @media (max-width: 1100px) { .calc-grid { grid-template-columns: 1fr; } }
       `}</style>
 
       <div style={{ width: '100%', margin: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -273,81 +298,132 @@ export default function SimuladorPage() {
 
         {message ? <div className="message" style={{ margin: 0 }}>{message}</div> : null}
 
-        <section style={{ background: tk.surface, border: `1px solid ${tk.border}`, borderRadius: '16px', padding: '18px', boxShadow: tk.shadow, display: 'grid', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: tk.textSub, fontSize: '12px' }}>
-            {Ic.spark}
-            <span>Preencha as informacoes e execute a simulacao.</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-            {user?.role === 'SUPER_ADMIN' ? (
-              <Field label="Empresa" tk={tk}>
+        <div className="calc-grid">
+          <section style={{ background: tk.surface, border: `1px solid ${tk.border}`, borderRadius: '16px', padding: '18px', boxShadow: tk.shadow, display: 'grid', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: tk.textSub, fontSize: '12px' }}>
+              {Ic.spark}
+              <span>Calculadora fiscal: preencha os dados e simule.</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+              {user?.role === 'SUPER_ADMIN' ? (
+                <Field label="Empresa" tk={tk}>
+                  <Select
+                    value={companyId}
+                    onChange={setCompanyId}
+                    options={companyOptions}
+                    placeholder="Selecione"
+                    tk={tk}
+                  />
+                </Field>
+              ) : null}
+              <Field label="UF destino" tk={tk}>
+                <Input value={uf} onChange={setUf} placeholder="Ex: SP" tk={tk} />
+              </Field>
+              <Field label="Regime" tk={tk}>
                 <Select
-                  value={companyId}
-                  onChange={setCompanyId}
-                  options={companyOptions}
+                  value={regime}
+                  onChange={(v) => setRegime(v as 'NORMAL' | 'SIMPLES')}
+                  options={[
+                    { value: 'NORMAL', label: 'NORMAL' },
+                    { value: 'SIMPLES', label: 'SIMPLES' },
+                  ]}
+                  tk={tk}
+                />
+              </Field>
+              <Field label="Produto" tk={tk}>
+                <Select
+                  value={productId}
+                  onChange={setProductId}
+                  options={products.map((product) => ({
+                    value: product.id,
+                    label: `${product.sku ? `${product.sku} · ` : ''}${product.name}`
+                  }))}
                   placeholder="Selecione"
                   tk={tk}
                 />
               </Field>
-            ) : null}
-            <Field label="UF destino" tk={tk}>
-              <Input value={uf} onChange={setUf} placeholder="Ex: SP" tk={tk} />
-            </Field>
-            <Field label="Regime" tk={tk}>
-              <Select
-                value={regime}
-                onChange={(v) => setRegime(v as 'NORMAL' | 'SIMPLES')}
-                options={[
-                  { value: 'NORMAL', label: 'NORMAL' },
-                  { value: 'SIMPLES', label: 'SIMPLES' },
-                ]}
-                tk={tk}
-              />
-            </Field>
-            <Field label="Produto" tk={tk}>
-              <Select
-                value={productId}
-                onChange={setProductId}
-                options={products.map((product) => ({
-                  value: product.id,
-                  label: `${product.sku ? `${product.sku} · ` : ''}${product.name}`
-                }))}
-                placeholder="Selecione"
-                tk={tk}
-              />
-            </Field>
-          </div>
-
-          {selectedProduct ? (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              <span style={{ background: tk.chipBg, color: tk.accentText, borderRadius: '999px', padding: '6px 10px', fontSize: '11px', fontWeight: '600' }}>
-                NCM {selectedProduct.ncm || '-'}
-              </span>
-              <span style={{ background: tk.surfaceAlt, color: tk.textSub, borderRadius: '999px', padding: '6px 10px', fontSize: '11px', fontWeight: '600' }}>
-                CEST {selectedProduct.cest || '-'}
-              </span>
             </div>
-          ) : null}
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              onClick={runSimulation}
-              style={{
-                padding: '9px 16px',
-                background: tk.accent,
-                border: `1px solid ${tk.accent}`,
-                color: '#fff',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: '600',
-                fontFamily: 'var(--np-font)'
-              }}
-            >
-              Simular
-            </button>
-          </div>
-        </section>
+            {selectedProduct ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                <span style={{ background: tk.chipBg, color: tk.accentText, borderRadius: '999px', padding: '6px 10px', fontSize: '11px', fontWeight: '600' }}>
+                  NCM {selectedProduct.ncm || '-'}
+                </span>
+                <span style={{ background: tk.surfaceAlt, color: tk.textSub, borderRadius: '999px', padding: '6px 10px', fontSize: '11px', fontWeight: '600' }}>
+                  CEST {selectedProduct.cest || '-'}
+                </span>
+              </div>
+            ) : null}
+
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                onClick={runSimulation}
+                style={{
+                  padding: '10px 18px',
+                  background: tk.accent,
+                  border: `1px solid ${tk.accent}`,
+                  color: '#fff',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontSize: '13.5px',
+                  fontWeight: '600',
+                  fontFamily: 'var(--np-font)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                Simular
+              </button>
+            </div>
+          </section>
+
+          <section style={{ background: tk.surface, border: `1px solid ${tk.border}`, borderRadius: '16px', padding: '18px', boxShadow: tk.shadow, display: 'grid', gap: '16px' }}>
+            <div className="calc-screen">
+              <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.14em', color: tk.textSub }}>
+                Display fiscal
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: tk.text, letterSpacing: '-0.02em' }}>{displayValue}</div>
+              <div style={{ fontSize: '12px', color: tk.textSub, fontVariantNumeric: 'tabular-nums' }}>Código: {displayCode}</div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
+              <div className="calc-key">
+                <span>UF</span>
+                <strong>{uf || '--'}</strong>
+              </div>
+              <div className="calc-key">
+                <span>Regime</span>
+                <strong>{regime}</strong>
+              </div>
+              <div className="calc-key">
+                <span>Produto</span>
+                <strong>{selectedProduct ? selectedProduct.name : '--'}</strong>
+              </div>
+              <div className="calc-key">
+                <span>NCM</span>
+                <strong>{selectedProduct?.ncm || '--'}</strong>
+              </div>
+              <div className="calc-key">
+                <span>ICMS</span>
+                <strong>{result?.icmsRate !== null && result?.icmsRate !== undefined ? `${Number(result.icmsRate).toFixed(2)}%` : '--'}</strong>
+              </div>
+              <div className="calc-key">
+                <span>ICMS-ST</span>
+                <strong>{result?.stRate !== null && result?.stRate !== undefined ? `${Number(result.stRate).toFixed(2)}%` : '--'}</strong>
+              </div>
+            </div>
+
+            {result ? (
+              <div style={{ fontSize: '12.5px', color: tk.textSub }}>
+                Regra aplicada: {result.ruleDescription || result.ruleId || '-'}
+              </div>
+            ) : (
+              <div style={{ fontSize: '12.5px', color: tk.textSub }}>Nenhum resultado ainda.</div>
+            )}
+          </section>
+        </div>
 
         {!result ? (
           <div style={{ padding: '64px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', border: `1px dashed ${tk.border}`, borderRadius: '14px', background: tk.surfaceAlt }}>
@@ -359,15 +435,15 @@ export default function SimuladorPage() {
           <section style={{ background: tk.surface, border: `1px solid ${tk.border}`, borderRadius: '16px', padding: '18px', boxShadow: tk.shadow, display: 'grid', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
               <div>
-                <div style={{ fontSize: '15px', fontWeight: '600', color: tk.text }}>Resultado</div>
-                <div style={{ fontSize: '12.5px', color: tk.textSub, marginTop: '4px' }}>Regra aplicada: {result.ruleDescription || result.ruleId || '-'}</div>
+                <div style={{ fontSize: '15px', fontWeight: '600', color: tk.text }}>Detalhes do calculo</div>
+                <div style={{ fontSize: '12.5px', color: tk.textSub, marginTop: '4px' }}>Informacoes completas da regra aplicada.</div>
               </div>
               <span style={{ background: tk.chipBg, color: tk.accentText, borderRadius: '999px', padding: '6px 10px', fontSize: '11px', fontWeight: '600' }}>{result.mode}</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
               <div style={{ padding: '12px', borderRadius: '12px', background: tk.surfaceAlt }}>
                 <div style={{ fontSize: '11px', color: tk.textSub, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Codigo fiscal</div>
-                <div style={{ fontSize: '15px', fontWeight: '600', color: tk.text, marginTop: '6px' }}>{result.cst || result.csosn || '-'}</div>
+                <div style={{ fontSize: '15px', fontWeight: '600', color: tk.text, marginTop: '6px' }}>{displayCode}</div>
               </div>
               <div style={{ padding: '12px', borderRadius: '12px', background: tk.surfaceAlt }}>
                 <div style={{ fontSize: '11px', color: tk.textSub, textTransform: 'uppercase', letterSpacing: '0.08em' }}>ICMS</div>
