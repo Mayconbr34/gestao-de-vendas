@@ -29,6 +29,7 @@ function tokens() {
   return {
     bg: 'var(--bg)',
     surface: 'var(--card)',
+    inputMuted: 'var(--surface)',
     border: 'var(--border)',
     borderFocus: 'var(--accent)',
     text: 'var(--ink)',
