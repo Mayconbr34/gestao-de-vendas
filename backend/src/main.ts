@@ -34,7 +34,7 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-    .setTitle('Projeto Backend e Frontend')
+    .setTitle('Projeto Integrador - Backend')
     .setDescription('API do sistema web com autenticação JWT')
     .setVersion('1.0.0')
     .addBearerAuth()

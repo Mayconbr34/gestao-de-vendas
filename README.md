@@ -1,4 +1,4 @@
-# Projeto Backend e Frontend
+# Projeto Integrador
 
 Sistema web com backend em NestJS e frontend em Next.js, usando PostgreSQL em nuvem, autenticação JWT, documentação Swagger/OpenAPI, conteinerização com Docker e pipeline CI/CD com GitHub Actions.
 
