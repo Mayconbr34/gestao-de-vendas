@@ -38,7 +38,6 @@ export class CompaniesService {
       legalName: dto.legalName,
       tradeName: dto.tradeName,
       cnpj: dto.cnpj,
-      address: dto.address ?? null,
       addressCep: dto.addressCep ?? null,
       addressStreet: dto.addressStreet ?? null,
       addressNumber: dto.addressNumber ?? null,
@@ -76,7 +75,6 @@ export class CompaniesService {
 
     if (dto.legalName !== undefined) company.legalName = dto.legalName;
     if (dto.tradeName !== undefined) company.tradeName = dto.tradeName;
-    if (dto.address !== undefined) company.address = dto.address;
     if (dto.addressCep !== undefined) company.addressCep = dto.addressCep ?? null;
     if (dto.addressStreet !== undefined) company.addressStreet = dto.addressStreet ?? null;
     if (dto.addressNumber !== undefined) company.addressNumber = dto.addressNumber ?? null;

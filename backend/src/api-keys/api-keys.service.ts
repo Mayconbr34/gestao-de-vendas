@@ -144,8 +144,15 @@ export class ApiKeysService {
         throw new NotFoundException('API Key não encontrada');
       }
     }
-    key.isActive = false;
-    return this.apiKeysRepository.save(key);
+    await this.apiRequestRepository
+      .createQueryBuilder()
+      .delete()
+      .from(ApiRequestLog)
+      .where('api_key_id = :id', { id })
+      .execute();
+
+    await this.apiKeysRepository.delete({ id });
+    return key;
   }
 
   async validate(apiKey: string, apiSecret: string) {

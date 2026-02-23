@@ -23,11 +23,6 @@ export class UpdateCompanyDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  address?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
   @Length(8, 10)
   addressCep?: string;
 

@@ -14,9 +14,6 @@ export class Company {
   @Column({ type: 'varchar', length: 20, unique: true })
   cnpj: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  address?: string | null;
-
   @Column({ name: 'address_cep', type: 'varchar', length: 10, nullable: true })
   addressCep?: string | null;
 
