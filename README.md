@@ -96,6 +96,7 @@ A documentação Swagger/UI fica em `http://localhost:3000/docs` (apenas logado)
 ### Categorias
 - `GET /categories` — lista categorias e quantidade de produtos
 - `POST /categories` — cria categoria
+- `PUT /categories/:id` — atualiza o nome da categoria
 
 ### Impostos
 - `GET /tax-profiles` — lista perfis fiscais (super admin pode filtrar com `?companyId=...`)

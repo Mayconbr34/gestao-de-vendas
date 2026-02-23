@@ -3,7 +3,9 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Param,
   Post,
+  Put,
   Query,
   Req,
   UseGuards
@@ -15,6 +17,7 @@ import { getRequestIp, getUserAgent } from '../audits/audit.utils';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserRole } from '../users/user.roles';
 import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CategoriesService } from './categories.service';
 
 @ApiTags('categories')
@@ -52,6 +55,23 @@ export class CategoriesController {
       resourceName: category.name,
       userId: (req as any).user?.userId ?? null,
       companyId,
+      ip: getRequestIp(req),
+      userAgent: getUserAgent(req)
+    });
+    return category;
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() dto: UpdateCategoryDto, @Req() req: Request) {
+    const requester = (req as any).user as { role?: UserRole; companyId?: string | null };
+    const category = await this.categoriesService.update(id, dto, requester);
+    await this.auditsService.logAction({
+      action: 'UPDATE_CATEGORY',
+      resource: 'categories',
+      resourceId: category.id,
+      resourceName: category.name,
+      userId: (req as any).user?.userId ?? null,
+      companyId: (category as any).companyId ?? null,
       ip: getRequestIp(req),
       userAgent: getUserAgent(req)
     });

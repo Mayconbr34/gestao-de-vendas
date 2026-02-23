@@ -759,20 +759,14 @@ export default function NovoProdutoPage() {
                   </Field>
                 </div>
 
-                {isEdit ? (
-                  <div className="np-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <Field label="Lucro (%) *" tk={tk}>
-                      <Input value={profitPercent} onChange={handleProfitPercentChange} placeholder="0" type="number" tk={tk} />
-                    </Field>
-                    <Field label="Preço de entrada (R$)" tk={tk}>
-                      <Input value={costPrice} onChange={handleCostPriceChange} placeholder="0.00" type="number" tk={tk} />
-                    </Field>
-                  </div>
-                ) : (
+                <div className="np-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <Field label="Lucro (%) *" tk={tk}>
                     <Input value={profitPercent} onChange={handleProfitPercentChange} placeholder="0" type="number" tk={tk} />
                   </Field>
-                )}
+                  <Field label="Preço de entrada (R$)" tk={tk}>
+                    <Input value={costPrice} onChange={handleCostPriceChange} placeholder="0.00" type="number" tk={tk} />
+                  </Field>
+                </div>
 
                 {/* Image upload */}
                 <Field label="Imagem do produto" tk={tk}>

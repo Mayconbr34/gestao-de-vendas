@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Modal from '../../../components/Modal';
 import { apiRequest } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
 
@@ -31,6 +32,11 @@ export default function CategoriasPage() {
   const { token } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editTarget, setEditTarget] = useState<Category | null>(null);
 
   const tk = useMemo(
     () => ({
@@ -63,6 +69,49 @@ export default function CategoriasPage() {
     loadCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  const openEdit = (category: Category) => {
+    setEditTarget(category);
+    setEditName(category.name);
+    setEditError('');
+    setEditOpen(true);
+  };
+
+  const closeEdit = () => {
+    if (editSaving) return;
+    setEditOpen(false);
+    setEditTarget(null);
+    setEditName('');
+    setEditError('');
+  };
+
+  const saveEdit = async () => {
+    if (!token || !editTarget) return;
+    const trimmed = editName.trim();
+    if (trimmed.length < 2) {
+      setEditError('Informe um nome com pelo menos 2 caracteres.');
+      return;
+    }
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const updated = await apiRequest<Category>(
+        `/categories/${editTarget.id}`,
+        { method: 'PUT', body: JSON.stringify({ name: trimmed }) },
+        token
+      );
+      setCategories((prev) =>
+        prev.map((item) => (item.id === editTarget.id ? { ...item, name: updated.name } : item))
+      );
+      setEditOpen(false);
+      setEditTarget(null);
+      setEditName('');
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Erro ao atualizar categoria');
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   return (
     <div style={{ padding: 0, background: tk.bg, minHeight: '100%', fontFamily: 'var(--pl-font)' }}>
@@ -130,7 +179,7 @@ export default function CategoriasPage() {
             </div>
           ) : (
             <>
-              <table className="pl-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+              <table className="pl-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${tk.surfaceAlt}` }}>
                     {(
@@ -138,6 +187,7 @@ export default function CategoriasPage() {
                         { label: 'ID', width: '260px' },
                         { label: 'Nome', width: 'auto' },
                         { label: 'Qtd. produtos', width: '150px' },
+                        { label: 'Ações', width: '120px' },
                       ] as { label: string; width: string }[]
                     ).map(({ label, width }, i) => (
                       <th
@@ -179,6 +229,23 @@ export default function CategoriasPage() {
                           {item.productCount ?? 0} produto{(item.productCount ?? 0) !== 1 ? 's' : ''}
                         </span>
                       </td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <button
+                          onClick={() => openEdit(item)}
+                          style={{
+                            padding: '6px 10px',
+                            background: tk.surfaceAlt,
+                            border: `1px solid ${tk.border}`,
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: tk.text,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Editar
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -192,6 +259,23 @@ export default function CategoriasPage() {
                     <span style={{ fontSize: '12px', color: tk.text, background: tk.surfaceAlt, padding: '3px 8px', borderRadius: '20px', width: 'fit-content' }}>
                       {item.productCount ?? 0} produto{(item.productCount ?? 0) !== 1 ? 's' : ''}
                     </span>
+                    <div>
+                      <button
+                        onClick={() => openEdit(item)}
+                        style={{
+                          padding: '6px 10px',
+                          background: tk.surfaceAlt,
+                          border: `1px solid ${tk.border}`,
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: tk.text,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Editar
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -199,6 +283,50 @@ export default function CategoriasPage() {
           )}
         </div>
       </div>
+
+      {editOpen && editTarget && (
+        <Modal
+          title="Editar categoria"
+          subtitle="Atualize o nome da categoria selecionada."
+          onClose={closeEdit}
+          footer={(
+            <div className="modal-actions">
+              <button className="btn ghost" onClick={closeEdit} disabled={editSaving}>
+                Cancelar
+              </button>
+              <button
+                className="btn primary"
+                onClick={saveEdit}
+                disabled={editSaving || editName.trim().length < 2}
+              >
+                Salvar
+              </button>
+            </div>
+          )}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <label style={{ fontSize: '12.5px', fontWeight: '500', color: tk.textSub }}>
+              Nome da categoria
+            </label>
+            <input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Ex: Bebidas"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                background: tk.surface,
+                border: `1px solid ${tk.border}`,
+                borderRadius: '8px',
+                fontSize: '13px',
+                color: tk.text,
+                outline: 'none'
+              }}
+            />
+            {editError ? <div className="message error">{editError}</div> : null}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
