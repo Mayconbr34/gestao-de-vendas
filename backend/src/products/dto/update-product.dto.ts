@@ -85,18 +85,6 @@ export class UpdateProductDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  taxNcm?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  taxCest?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
   @IsUUID()
   categoryId?: string;
 }

@@ -57,12 +57,6 @@ export class Product {
   @Column({ name: 'tax_type', type: 'varchar', length: 40, nullable: true })
   taxType?: string | null;
 
-  @Column({ name: 'tax_ncm', type: 'varchar', length: 20, nullable: true })
-  taxNcm?: string | null;
-
-  @Column({ name: 'tax_cest', type: 'varchar', length: 20, nullable: true })
-  taxCest?: string | null;
-
   @ManyToOne(() => Category, (category) => category.products, { nullable: false })
   @JoinColumn({ name: 'category_id' })
   category: Category;

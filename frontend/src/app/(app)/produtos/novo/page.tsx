@@ -1071,6 +1071,7 @@ export default function NovoProdutoPage() {
               ['Estoque', stock || '—'],
               ['Tributação', taxType || '—'],
               ['NCM', ncm || '—'],
+              ['CEST', cest || '—'],
               ['Origem', origin !== '' ? originLabel(Number(origin)).split(' - ')[0] : '—'],
               ['Categoria', categoryQuery || '—'],
               ['Código de barras', barcode || '—'],

@@ -76,18 +76,6 @@ export class CreateProductDto {
   @IsIn(TAX_TYPES)
   taxType: TaxType;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  taxNcm?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  taxCest?: string;
-
   @ApiProperty()
   @IsUUID()
   categoryId: string;

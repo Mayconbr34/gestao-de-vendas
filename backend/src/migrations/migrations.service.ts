@@ -439,6 +439,17 @@ export class MigrationsService implements OnApplicationBootstrap {
         `);
       });
 
+      await runMigration('product_025', async () => {
+        await queryRunner.query(`
+          ALTER TABLE products
+          DROP COLUMN IF EXISTS tax_ncm;
+        `);
+        await queryRunner.query(`
+          ALTER TABLE products
+          DROP COLUMN IF EXISTS tax_cest;
+        `);
+      });
+
       await runMigration('platform_024', async () => {
         await queryRunner.query(`
           CREATE TABLE IF NOT EXISTS platform_settings (

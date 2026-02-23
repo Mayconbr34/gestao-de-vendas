@@ -37,8 +37,6 @@ export class ProductsService {
         'product.barcode AS barcode',
         'product.image_url AS image_url',
         'product.tax_type AS tax_type',
-        'product.tax_ncm AS tax_ncm',
-        'product.tax_cest AS tax_cest',
         'product.company_id AS company_id',
         'category.name AS category_name'
       ])
@@ -62,8 +60,6 @@ export class ProductsService {
       barcode: row.barcode,
       imageUrl: row.image_url ?? null,
       taxType: row.tax_type ?? null,
-      taxNcm: row.tax_ncm ?? null,
-      taxCest: row.tax_cest ?? null,
       companyId: row.company_id ?? null,
       categoryName: row.category_name ?? null
     }));
@@ -98,8 +94,6 @@ export class ProductsService {
       barcode: product.barcode ?? null,
       imageUrl: product.imageUrl ?? null,
       taxType: product.taxType ?? null,
-      taxNcm: product.taxNcm ?? null,
-      taxCest: product.taxCest ?? null,
       companyId: product.companyId ?? null,
       categoryId: product.category?.id ?? null,
       categoryName: product.category?.name ?? null
@@ -138,8 +132,6 @@ export class ProductsService {
       costPrice: dto.costPrice ?? null,
       taxProfileId: taxProfile?.id ?? null,
       taxType: taxProfile?.taxType ?? dto.taxType ?? null,
-      taxNcm: taxProfile?.ncm ?? dto.taxNcm ?? null,
-      taxCest: taxProfile?.cest ?? dto.taxCest ?? null,
       category,
       companyId,
       company: { id: companyId } as Company
@@ -199,13 +191,9 @@ export class ProductsService {
       }
       product.taxProfileId = taxProfile.id;
       product.taxType = taxProfile.taxType;
-      product.taxNcm = taxProfile.ncm ?? null;
-      product.taxCest = taxProfile.cest ?? null;
     } else {
       if (dto.taxType !== undefined) product.taxType = dto.taxType ?? null;
-      if (dto.taxNcm !== undefined) product.taxNcm = dto.taxNcm ?? null;
-      if (dto.taxCest !== undefined) product.taxCest = dto.taxCest ?? null;
-      if (dto.taxType !== undefined || dto.taxNcm !== undefined || dto.taxCest !== undefined) {
+      if (dto.taxType !== undefined) {
         product.taxProfileId = null;
       }
     }
