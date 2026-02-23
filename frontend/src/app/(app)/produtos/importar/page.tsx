@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
+import Modal from '../../../../components/Modal';
 import { apiRequest } from '../../../../lib/api';
 import { useAuth } from '../../../../lib/auth';
 
@@ -282,6 +283,10 @@ export default function ImportarProdutosPage() {
   const [defaultCategoryName, setDefaultCategoryName] = useState('');
   const [defaultCategoryId, setDefaultCategoryId] = useState('');
   const [applyDefaultToAll, setApplyDefaultToAll] = useState(true);
+  const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+  const [createCategoryName, setCreateCategoryName] = useState('');
+  const [createCategoryError, setCreateCategoryError] = useState('');
+  const [createCategorySaving, setCreateCategorySaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState('');
   const [dragActive, setDragActive] = useState(false);
@@ -309,6 +314,33 @@ export default function ImportarProdutosPage() {
       }))
     );
   }, [defaultCategoryId, applyDefaultToAll]);
+
+  const handleCreateCategory = async () => {
+    if (!token) return;
+    const trimmed = createCategoryName.trim();
+    if (trimmed.length < 2) {
+      setCreateCategoryError('Informe um nome com pelo menos 2 caracteres.');
+      return;
+    }
+    setCreateCategorySaving(true);
+    setCreateCategoryError('');
+    try {
+      const created = await apiRequest<Category>(
+        '/categories',
+        { method: 'POST', body: JSON.stringify({ name: trimmed }) },
+        token
+      );
+      setCategories((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setDefaultCategoryName(created.name);
+      setDefaultCategoryId(created.id);
+      setCreateCategoryOpen(false);
+      setCreateCategoryName('');
+    } catch (err) {
+      setCreateCategoryError(err instanceof Error ? err.message : 'Erro ao cadastrar categoria');
+    } finally {
+      setCreateCategorySaving(false);
+    }
+  };
 
   const filteredCategories = useMemo(() => {
     if (!defaultCategoryName.trim()) return categories;
@@ -424,8 +456,8 @@ export default function ImportarProdutosPage() {
         cest,
         taxType: 'TRIBUTADO',
         origin,
-        salePrice: parseNumber(price),
-        costPrice: '',
+        salePrice: '',
+        costPrice: parseNumber(price),
         profitPercent: '',
         stock: '0',
         barcode,
@@ -819,6 +851,29 @@ export default function ImportarProdutosPage() {
                   ) : null}
                 </div>
               </Field>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateCategoryName(defaultCategoryName);
+                    setCreateCategoryError('');
+                    setCreateCategoryOpen(true);
+                  }}
+                  style={{
+                    padding: '7px 12px',
+                    background: tk.surface,
+                    border: `1px solid ${tk.border}`,
+                    borderRadius: '8px',
+                    color: tk.text,
+                    cursor: 'pointer',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    fontFamily: 'var(--np-font)'
+                  }}
+                >
+                  Cadastrar categoria
+                </button>
+              </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: tk.textSub, fontFamily: 'var(--np-font)' }}>
                 <input
                   type="checkbox"
@@ -1362,6 +1417,58 @@ export default function ImportarProdutosPage() {
           </div>
         ) : null}
       </div>
+
+      {createCategoryOpen && (
+        <Modal
+          title="Cadastrar categoria"
+          subtitle="Crie uma categoria para usar nos produtos importados."
+          onClose={() => {
+            if (createCategorySaving) return;
+            setCreateCategoryOpen(false);
+            setCreateCategoryError('');
+          }}
+          footer={(
+            <div className="modal-actions">
+              <button
+                className="btn ghost"
+                onClick={() => setCreateCategoryOpen(false)}
+                disabled={createCategorySaving}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn primary"
+                onClick={handleCreateCategory}
+                disabled={createCategorySaving || createCategoryName.trim().length < 2}
+              >
+                Salvar
+              </button>
+            </div>
+          )}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <label style={{ fontSize: '12.5px', fontWeight: '500', color: tk.textSub }}>
+              Nome da categoria
+            </label>
+            <input
+              value={createCategoryName}
+              onChange={(event) => setCreateCategoryName(event.target.value)}
+              placeholder="Ex: Bebidas"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                background: tk.surface,
+                border: `1px solid ${tk.border}`,
+                borderRadius: '8px',
+                fontSize: '13px',
+                color: tk.text,
+                outline: 'none'
+              }}
+            />
+            {createCategoryError ? <div className="message error">{createCategoryError}</div> : null}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

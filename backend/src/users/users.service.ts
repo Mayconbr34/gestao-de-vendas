@@ -14,6 +14,14 @@ export class UsersService {
   ) {}
 
   private sanitize(user: User) {
+    const company = user.company
+      ? {
+          id: user.company.id,
+          tradeName: user.company.tradeName,
+          primaryColor: user.company.primaryColor ?? null,
+          logoUrl: user.company.logoUrl ?? null
+        }
+      : null;
     return {
       id: user.id,
       email: user.email,
@@ -21,7 +29,8 @@ export class UsersService {
       role: user.role,
       avatarUrl: user.avatarUrl ?? null,
       companyId: user.companyId ?? null,
-      companyName: (user as any).company?.tradeName ?? null,
+      companyName: user.company?.tradeName ?? null,
+      company,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };
