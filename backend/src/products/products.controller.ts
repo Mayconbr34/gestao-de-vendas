@@ -55,7 +55,9 @@ export class ProductsController {
   async create(@Body() dto: CreateProductDto, @Req() req: Request) {
     const requester = (req as any).user as { role?: UserRole; companyId?: string | null };
     const companyId =
-      requester?.role === 'SUPER_ADMIN' ? (dto as any).companyId : requester?.companyId;
+      requester?.role === 'SUPER_ADMIN'
+        ? (dto as any).companyId ?? requester?.companyId
+        : requester?.companyId;
     if (!companyId) {
       throw new ForbiddenException('Empresa não definida');
     }

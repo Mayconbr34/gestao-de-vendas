@@ -43,7 +43,9 @@ export class CategoriesController {
   async create(@Body() dto: CreateCategoryDto, @Req() req: Request) {
     const requester = (req as any).user as { role?: UserRole; companyId?: string | null };
     const companyId =
-      requester?.role === 'SUPER_ADMIN' ? (dto as any).companyId : requester?.companyId;
+      requester?.role === 'SUPER_ADMIN'
+        ? (dto as any).companyId ?? requester?.companyId
+        : requester?.companyId;
     if (!companyId) {
       throw new ForbiddenException('Empresa não definida');
     }

@@ -118,7 +118,11 @@ export class UsersService {
     }
 
     if (dto.companyId !== undefined) {
-      user.companyId = dto.companyId ?? null;
+      const normalizedCompanyId = dto.companyId ? dto.companyId : null;
+      user.companyId = normalizedCompanyId;
+      if (!normalizedCompanyId) {
+        user.company = null;
+      }
     }
 
     const saved = await this.usersRepository.save(user);
