@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { useEffect, useMemo, useState, useRef, useId } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { apiRequest, fileUrl } from '../lib/api';
@@ -82,14 +82,6 @@ const Icons = {
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
     </svg>
   ),
-  accessibility: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="4" r="2"/>
-      <path d="M12 6v5"/>
-      <path d="M4 10h16"/>
-      <path d="M7 20l5-7 5 7"/>
-    </svg>
-  ),
   logout: (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
@@ -135,7 +127,6 @@ type NavItem = { href: string; label: string; icon: React.ReactNode };
 
 const primaryItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: Icons.dashboard },
-  { href: '/usuarios', label: 'Usuários', icon: Icons.users },
 ];
 
 const docsItem: NavItem = { href: '/docs', label: 'Docs API', icon: Icons.code };
@@ -148,6 +139,7 @@ const productChildren: NavItem[] = [
 ];
 
 const companyChildren: NavItem[] = [
+  { href: '/usuarios', label: 'Usuários', icon: Icons.users },
   { href: '/empresa-config', label: 'Config. empresa', icon: Icons.settings },
   { href: '/aliquotas', label: 'Alíquotas UF', icon: Icons.percent },
   { href: '/regras-fiscais', label: 'Regras fiscais', icon: Icons.shield },
@@ -174,12 +166,12 @@ const adminOpsChildren: NavItem[] = [
 const platformChildren: NavItem[] = [
   { href: '/plataforma', label: 'Config. plataforma', icon: Icons.settings },
   { href: '/empresas', label: 'Empresas', icon: Icons.globe },
+  { href: '/usuarios', label: 'Usuários', icon: Icons.users },
   { href: '/auditoria', label: 'Auditoria', icon: Icons.clock },
 ];
 
 const userChildren: NavItem[] = [
   { href: '/perfil', label: 'Meu perfil', icon: Icons.user },
-  { href: '/acessibilidade', label: 'Acessibilidade', icon: Icons.accessibility },
 ];
 
 /* ─── NavLink ────────────────────────────────────────────── */
@@ -271,7 +263,6 @@ function SidebarContent({
   setUserMenuOpen,
   onLogout,
   userRef,
-  canHover,
   theme,
   toggleTheme,
 }: {
@@ -289,17 +280,9 @@ function SidebarContent({
   setUserMenuOpen: (v: boolean | ((p: boolean) => boolean)) => void;
   onLogout: () => void;
   userRef: React.RefObject<HTMLDivElement>;
-  canHover: boolean;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
 }) {
-  const popupId = useId();
-  const handleUserBlur = (event: React.FocusEvent<HTMLButtonElement>) => {
-    const nextTarget = event.relatedTarget as Node | null;
-    if (nextTarget && userRef.current?.contains(nextTarget)) return;
-    setUserMenuOpen(false);
-  };
-
   return (
     <div className="sb-panel">
       {/* Brand */}
@@ -356,12 +339,7 @@ function SidebarContent({
       </div>
 
       {/* User footer */}
-      <div
-        ref={userRef}
-        className="sb-footer"
-        onMouseEnter={() => { if (canHover) setUserMenuOpen(true); }}
-        onMouseLeave={() => { if (canHover) setUserMenuOpen(false); }}
-      >
+      <div ref={userRef} className="sb-footer">
         <div className="sb-theme">
           <span>Modo escuro</span>
           <button
@@ -375,7 +353,7 @@ function SidebarContent({
         </div>
         {/* Popup */}
         {userMenuOpen && (
-          <div id={popupId} className="sb-user-popup" role="menu" aria-label="Menu do usuário">
+          <div className="sb-user-popup">
             {/* Info */}
             <div className="sb-user-popup__header">
               <div className="sb-user-name">
@@ -392,7 +370,6 @@ function SidebarContent({
             {/* Items */}
             {[
               { href: '/perfil', label: 'Meu perfil', icon: Icons.user },
-              { href: '/acessibilidade', label: 'Acessibilidade', icon: Icons.accessibility },
               { href: '/empresa-config', label: 'Configurações', icon: Icons.settings },
             ].map((item) => (
               <Link
@@ -400,7 +377,6 @@ function SidebarContent({
                 href={item.href}
                 onClick={() => setUserMenuOpen(false)}
                 className="sb-user-item"
-                role="menuitem"
               >
                 <span className="sb-user-item__icon">{item.icon}</span>
                 <span className="sb-user-item__label">{item.label}</span>
@@ -412,7 +388,6 @@ function SidebarContent({
               <button
                 onClick={onLogout}
                 className="sb-user-item sb-user-item--danger"
-                role="menuitem"
               >
                 <span className="sb-user-item__icon">{Icons.logout}</span>
                 <span className="sb-user-item__label">Sair</span>
@@ -422,20 +397,8 @@ function SidebarContent({
         )}
 
         {/* Chip */}
-        <button
-          type="button"
+        <div
           onClick={() => setUserMenuOpen((p) => !p)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              setUserMenuOpen((p) => !p);
-            }
-          }}
-          onBlur={handleUserBlur}
-          aria-haspopup="menu"
-          aria-expanded={userMenuOpen}
-          aria-controls={popupId}
-          aria-label="Abrir menu do usuário"
           className={`sb-user-chip${userMenuOpen ? ' open' : ''}`}
         >
           <div className="sb-user-avatar">
@@ -460,7 +423,7 @@ function SidebarContent({
           <span className={`sb-user-chevron${userMenuOpen ? ' open' : ''}`}>
             {Icons.chevronDown}
           </span>
-        </button>
+        </div>
       </div>
     </div>
   );
@@ -488,7 +451,6 @@ export default function Sidebar({
   const [platformName, setPlatformName] = useState('Plataforma');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [canHover, setCanHover] = useState(false);
   const desktopUserRef = useRef<HTMLDivElement>(null);
   const mobileUserRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
@@ -533,14 +495,6 @@ export default function Sidebar({
   }, []);
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const media = window.matchMedia('(hover: hover)');
-    const apply = () => setCanHover(media.matches);
-    apply();
-    media.addEventListener('change', apply);
-    return () => media.removeEventListener('change', apply);
-  }, []);
 
   const browser = useMemo(() => {
     if (typeof window === 'undefined') return 'Browser';
@@ -570,7 +524,6 @@ export default function Sidebar({
     userMenuOpen,
     setUserMenuOpen,
     onLogout,
-    canHover,
     theme,
     toggleTheme,
   };

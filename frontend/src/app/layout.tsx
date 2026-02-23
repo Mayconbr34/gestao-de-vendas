@@ -1,6 +1,7 @@
 import './globals.css';
 import { IBM_Plex_Sans, Space_Grotesk } from 'next/font/google';
 import { AuthProvider } from '../lib/auth';
+import { AccessibilityProvider } from '../lib/accessibility';
 import { ThemeProvider } from '../lib/theme';
 import type { Metadata } from 'next';
 
@@ -58,9 +59,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${plex.variable} ${space.variable}`}>
       <body>
-        <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </ThemeProvider>
+        <AccessibilityProvider>
+          <ThemeProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </ThemeProvider>
+        </AccessibilityProvider>
       </body>
     </html>
   );

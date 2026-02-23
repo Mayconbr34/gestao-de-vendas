@@ -75,6 +75,70 @@ html[data-font-scale='lg'] {
   font-size: 112.5%;
 }
 
+html[data-spacing='wide'] body {
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+html[data-underline-links='true'] a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 2px;
+}
+
+html[data-focus-ring='strong'] :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+html[data-contrast='high'] {
+  --bg: #ffffff;
+  --bg-deep: #f8fafc;
+  --card: #ffffff;
+  --ink: #0b1120;
+  --muted: #334155;
+  --border: #0f172a;
+  --accent: #1d4ed8;
+  --accent-dark: #1e40af;
+  --accent-warm: #2563eb;
+  --surface: #f8fafc;
+
+  --sidebar-border: #0f172a;
+  --sidebar-muted: #1f2937;
+  --sidebar-hover: #f1f5f9;
+  --sidebar-active-bg: #dbeafe;
+  --sidebar-active: #1d4ed8;
+  --sidebar-icon: #1f2937;
+  --sidebar-icon-hover: #0f172a;
+  --sidebar-chip-bg: #e2e8f0;
+  --sidebar-chip-border: #0f172a;
+  --sidebar-popup-border: #0f172a;
+}
+
+html[data-contrast='high'][data-theme='dark'] {
+  --bg: #000000;
+  --bg-deep: #0b0b0b;
+  --card: #0b0b0b;
+  --ink: #ffffff;
+  --muted: #e5e7eb;
+  --border: #e5e7eb;
+  --accent: #93c5fd;
+  --accent-dark: #60a5fa;
+  --accent-warm: #93c5fd;
+  --surface: #0b0b0b;
+
+  --sidebar-border: #e5e7eb;
+  --sidebar-muted: #e5e7eb;
+  --sidebar-hover: #111827;
+  --sidebar-active-bg: #1f2937;
+  --sidebar-active: #93c5fd;
+  --sidebar-icon: #e5e7eb;
+  --sidebar-icon-hover: #ffffff;
+  --sidebar-chip-bg: #111827;
+  --sidebar-chip-border: #e5e7eb;
+  --sidebar-popup-border: #e5e7eb;
+}
+
 html[data-reduce-motion='true'] * {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
