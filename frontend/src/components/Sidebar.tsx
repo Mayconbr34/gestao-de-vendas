@@ -82,6 +82,14 @@ const Icons = {
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
     </svg>
   ),
+  accessibility: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="4" r="2"/>
+      <path d="M12 6v5"/>
+      <path d="M4 10h16"/>
+      <path d="M7 20l5-7 5 7"/>
+    </svg>
+  ),
   logout: (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
@@ -153,6 +161,7 @@ const companyUserChildren: NavItem[] = [
   { href: '/auditoria', label: 'Auditoria', icon: Icons.clock },
   { href: '/simulador', label: 'Simulador', icon: Icons.zap },
   docsItem,
+  { href: '/acessibilidade', label: 'Acessibilidade', icon: Icons.accessibility },
 ];
 
 const adminOpsChildren: NavItem[] = [
@@ -172,6 +181,7 @@ const platformChildren: NavItem[] = [
 
 const userChildren: NavItem[] = [
   { href: '/perfil', label: 'Meu perfil', icon: Icons.user },
+  { href: '/acessibilidade', label: 'Acessibilidade', icon: Icons.accessibility },
 ];
 
 /* ─── NavLink ────────────────────────────────────────────── */
@@ -370,6 +380,7 @@ function SidebarContent({
             {/* Items */}
             {[
               { href: '/perfil', label: 'Meu perfil', icon: Icons.user },
+              { href: '/acessibilidade', label: 'Acessibilidade', icon: Icons.accessibility },
               { href: '/empresa-config', label: 'Configurações', icon: Icons.settings },
             ].map((item) => (
               <Link
