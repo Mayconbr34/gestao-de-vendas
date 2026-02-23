@@ -1,6 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './category.entity';
@@ -67,8 +67,9 @@ export class CategoriesService {
 
     if (dto.name !== undefined) {
       const trimmed = dto.name.trim();
+      const companyFilter = category.companyId ? category.companyId : IsNull();
       const existing = await this.categoriesRepository.findOne({
-        where: { name: trimmed, companyId: category.companyId }
+        where: { name: trimmed, companyId: companyFilter }
       });
       if (existing && existing.id !== category.id) {
         throw new ConflictException('Categoria já existe');
