@@ -71,6 +71,17 @@ html {
   color-scheme: light dark;
 }
 
+html[data-font-scale='lg'] {
+  font-size: 112.5%;
+}
+
+html[data-reduce-motion='true'] * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
 body {
   font-family: var(--font-body), sans-serif;
   color: var(--ink);
@@ -479,6 +490,11 @@ input {
   transition: all 0.2s ease;
 }
 
+.sb-switch:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
 .sb-switch.on {
   background: var(--sidebar-active-bg);
   border-color: var(--sidebar-active);
@@ -571,15 +587,19 @@ input {
 }
 
 .sb-user-chip {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
   display: flex;
   align-items: center;
   gap: 11px;
   padding: 9px 10px;
   border-radius: 9px;
   cursor: pointer;
-  border: 1px solid transparent;
-  background: transparent;
   transition: all 0.12s;
+  width: 100%;
+  text-align: left;
+  font: inherit;
 }
 
 .sb-user-chip:not(.open):hover {
@@ -588,6 +608,12 @@ input {
 
 .sb-user-chip.open {
   background: var(--sidebar-active-bg);
+  border-color: var(--sidebar-active);
+}
+
+.sb-user-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
   border-color: var(--sidebar-active);
 }
 
