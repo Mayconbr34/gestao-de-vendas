@@ -1251,6 +1251,7 @@ input {
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
   }
 
   .sb-root {

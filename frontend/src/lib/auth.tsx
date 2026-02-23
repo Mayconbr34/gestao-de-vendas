@@ -20,6 +20,7 @@ export type AuthUser = {
 type AuthContextValue = {
   token: string | null;
   user: AuthUser | null;
+  isReady: boolean;
   login: (token: string, user: AuthUser) => void;
   updateUser: (user: AuthUser) => void;
   logout: () => void;
@@ -30,12 +31,14 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const storedToken = window.localStorage.getItem('token');
     const storedUser = window.localStorage.getItem('user');
     if (storedToken) setToken(storedToken);
     if (storedUser) setUser(JSON.parse(storedUser));
+    setIsReady(true);
   }, []);
 
   const login = (nextToken: string, nextUser: AuthUser) => {
@@ -57,7 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
-  const value = useMemo(() => ({ token, user, login, logout, updateUser }), [token, user]);
+  const value = useMemo(
+    () => ({ token, user, isReady, login, logout, updateUser }),
+    [token, user, isReady]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

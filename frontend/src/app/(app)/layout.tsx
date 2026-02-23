@@ -7,13 +7,13 @@ import { useAuth } from '../../lib/auth';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { token, user, logout } = useAuth();
+  const { token, user, logout, isReady } = useAuth();
 
   useEffect(() => {
-    if (!token) {
+    if (isReady && !token) {
       router.replace('/login');
     }
-  }, [token, router]);
+  }, [token, isReady, router]);
 
   useEffect(() => {
     if (user?.company?.primaryColor) {
@@ -21,7 +21,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [user?.company?.primaryColor]);
 
-  if (!token) {
+  if (!isReady || !token) {
     return null;
   }
 

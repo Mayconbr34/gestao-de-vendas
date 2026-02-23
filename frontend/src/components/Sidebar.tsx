@@ -130,6 +130,8 @@ const primaryItems: NavItem[] = [
   { href: '/usuarios', label: 'Usuários', icon: Icons.users },
 ];
 
+const docsItem: NavItem = { href: '/docs', label: 'Docs API', icon: Icons.code };
+
 const productChildren: NavItem[] = [
   { href: '/produtos', label: 'Catálogo', icon: Icons.box },
   { href: '/produtos/novo', label: 'Cadastrar produto', icon: Icons.plus },
@@ -143,12 +145,14 @@ const companyChildren: NavItem[] = [
   { href: '/regras-fiscais', label: 'Regras fiscais', icon: Icons.shield },
   { href: '/simulador', label: 'Simulador', icon: Icons.zap },
   { href: '/api', label: 'API', icon: Icons.code },
+  docsItem,
   { href: '/auditoria', label: 'Auditoria', icon: Icons.clock },
 ];
 
 const companyUserChildren: NavItem[] = [
   { href: '/auditoria', label: 'Auditoria', icon: Icons.clock },
   { href: '/simulador', label: 'Simulador', icon: Icons.zap },
+  docsItem,
 ];
 
 const adminOpsChildren: NavItem[] = [
@@ -156,12 +160,13 @@ const adminOpsChildren: NavItem[] = [
   { href: '/regras-fiscais', label: 'Regras fiscais', icon: Icons.shield },
   { href: '/simulador', label: 'Simulador', icon: Icons.zap },
   { href: '/api', label: 'API', icon: Icons.code },
-  { href: '/auditoria', label: 'Auditoria', icon: Icons.clock },
+  docsItem,
 ];
 
 const platformChildren: NavItem[] = [
   { href: '/plataforma', label: 'Config. plataforma', icon: Icons.settings },
   { href: '/empresas', label: 'Empresas', icon: Icons.globe },
+  { href: '/auditoria', label: 'Auditoria', icon: Icons.clock },
 ];
 
 const userChildren: NavItem[] = [
