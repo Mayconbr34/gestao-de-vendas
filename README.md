@@ -135,6 +135,57 @@ Todos os endpoints (exceto `/auth/*`, `/platform-settings/public` e `/api/*`) ex
 - Para localizar o IP no login, configure `GEOIP_API_URL` (ex.: `https://ipapi.co/{ip}/json/`). Sem isso, a auditoria grava apenas o IP.
 - `API_RATE_LIMIT_DEFAULT` define o limite padrão de requisições por minuto para novas chaves de API.
 
+## Testes Unitários (Python)
+
+Testes de integração em Python que validam os endpoints da API REST.
+
+### Requisitos
+
+- Python 3.10+
+- API rodando em `http://localhost:3001`
+
+### Instalação
+
+```bash
+pip install -r requirements-test.txt
+```
+
+### Configuração
+
+Crie o arquivo `tests/.env` (ou exporte as variáveis) com as credenciais de teste:
+
+```env
+TEST_API_URL=http://localhost:3001
+TEST_ADMIN_EMAIL=admin@admin.com
+TEST_ADMIN_PASSWORD=123456
+```
+
+> Se não configurado, os valores acima são usados como padrão.
+
+### Executando
+
+```bash
+# Todos os testes
+cd tests && pytest
+
+# Módulo específico
+pytest tests/test_health.py
+pytest tests/test_auth.py
+pytest tests/test_products.py
+pytest tests/test_categories.py
+pytest tests/test_users.py
+```
+
+### Cobertura dos testes
+
+| Arquivo              | O que testa                                          |
+|----------------------|------------------------------------------------------|
+| `test_health.py`     | Smoke tests — API no ar, Swagger, rotas 404/401      |
+| `test_auth.py`       | Login válido/inválido, campos obrigatórios, session  |
+| `test_products.py`   | Listar, criar, buscar, CRUD completo (criar→deletar) |
+| `test_categories.py` | Listar, criar, atualizar categoria                   |
+| `test_users.py`      | Perfil `/users/me`, atualização, listagem            |
+
 ## Docker
 
 Com o backend configurado em `backend/.env`:
