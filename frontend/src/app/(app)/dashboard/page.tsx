@@ -564,30 +564,30 @@ export default function DashboardPage() {
       {/* ── Stat Cards ── */}
       {user.role === 'SUPER_ADMIN' && (
         <div style={gridStyle(240)}>
-          <StatCard label="Empresas" value={metrics.companies} icon={Ic.building} trend="12%" trendUp color="#2563eb" />
-          <StatCard label="Usuários" value={metrics.users} icon={Ic.users} trend="8%" trendUp color="#6366f1" />
-          <StatCard label="Produtos" value={metrics.products} icon={Ic.box} trend="24%" trendUp color="#0ea5e9" />
+          <StatCard label="Empresas" value={metrics.companies} icon={Ic.building} color="#2563eb" />
+          <StatCard label="Usuários" value={metrics.users} icon={Ic.users} color="#6366f1" />
+          <StatCard label="Produtos" value={metrics.products} icon={Ic.box} color="#0ea5e9" />
           <StatCard label="Categorias" value={metrics.categories} icon={Ic.tag} color="#f59e0b" />
-          <StatCard label="APIs criadas" value={metrics.apiKeys} icon={Ic.code} trend="5%" trendUp color="#10b981" />
+          <StatCard label="APIs criadas" value={metrics.apiKeys} icon={Ic.code} color="#10b981" />
           <StatCard label="Auditorias" value={metrics.audits} icon={Ic.clock} color="#94a3b8" />
         </div>
       )}
 
       {user.role === 'COMPANY_ADMIN' && (
         <div style={gridStyle(240)}>
-          <StatCard label="Usuários" value={metrics.users} icon={Ic.users} trend="8%" trendUp color="#2563eb" />
-          <StatCard label="Produtos" value={metrics.products} icon={Ic.box} trend="24%" trendUp color="#0ea5e9" />
+          <StatCard label="Usuários" value={metrics.users} icon={Ic.users} color="#2563eb" />
+          <StatCard label="Produtos" value={metrics.products} icon={Ic.box} color="#0ea5e9" />
           <StatCard label="Categorias" value={metrics.categories} icon={Ic.tag} color="#f59e0b" />
           <StatCard label="Regras fiscais" value={metrics.fiscalRules} icon={Ic.shield} color="#6366f1" />
           <StatCard label="Alíquotas UF" value={metrics.icmsRates} icon={Ic.percent} color="#10b981" />
-          <StatCard label="APIs criadas" value={metrics.apiKeys} icon={Ic.code} trend="5%" trendUp color="#0ea5e9" />
+          <StatCard label="APIs criadas" value={metrics.apiKeys} icon={Ic.code} color="#0ea5e9" />
           <StatCard label="Auditorias" value={metrics.audits} icon={Ic.clock} color="#94a3b8" />
         </div>
       )}
 
       {user.role === 'COMPANY_USER' && (
         <div style={gridStyle(240)}>
-          <StatCard label="Produtos" value={metrics.products} icon={Ic.box} trend="24%" trendUp color="#2563eb" />
+          <StatCard label="Produtos" value={metrics.products} icon={Ic.box} color="#2563eb" />
           <StatCard label="Categorias" value={metrics.categories} icon={Ic.tag} color="#0ea5e9" />
         </div>
       )}
@@ -695,6 +695,8 @@ export default function DashboardPage() {
         {/* Quick actions */}
         <ChartCard title="Ações rápidas" subtitle="Atalhos para operações frequentes">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            <QuickBtn href="/pdv" label="Abrir PDV" icon={Ic.zap} />
+            <QuickBtn href="/analise" label="Análise de vendas" icon={Ic.list} />
             {user.role === 'SUPER_ADMIN' && (
               <>
                 <QuickBtn href="/empresas" label="Ver empresas" icon={Ic.building} />

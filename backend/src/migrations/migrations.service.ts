@@ -500,6 +500,62 @@ export class MigrationsService implements OnApplicationBootstrap {
         `);
       });
 
+      // PDV: vendas e itens de venda (PI IV)
+      await runMigration('sales_029', async () => {
+        await queryRunner.query(`
+          CREATE TABLE IF NOT EXISTS sales (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            company_id UUID NOT NULL REFERENCES companies(id),
+            user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+            customer_name VARCHAR(160),
+            payment_method VARCHAR(30) NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'COMPLETED',
+            subtotal NUMERIC(12,2) NOT NULL,
+            discount NUMERIC(12,2) NOT NULL DEFAULT 0,
+            total NUMERIC(12,2) NOT NULL,
+            items_count INT NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            canceled_at TIMESTAMPTZ,
+            CONSTRAINT sales_total_non_negative CHECK (total >= 0),
+            CONSTRAINT sales_discount_valid CHECK (discount >= 0 AND discount <= subtotal)
+          );
+        `);
+        await queryRunner.query(`
+          CREATE TABLE IF NOT EXISTS sale_items (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            sale_id UUID NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+            product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+            product_name VARCHAR(255) NOT NULL,
+            category_name VARCHAR(160),
+            quantity INT NOT NULL CHECK (quantity > 0),
+            unit_price NUMERIC(12,2) NOT NULL,
+            unit_cost NUMERIC(12,2),
+            total NUMERIC(12,2) NOT NULL
+          );
+        `);
+        await queryRunner.query(`
+          CREATE INDEX IF NOT EXISTS idx_sales_company_created
+          ON sales (company_id, created_at DESC);
+        `);
+        await queryRunner.query(`
+          CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items (sale_id);
+        `);
+        await queryRunner.query(`
+          CREATE INDEX IF NOT EXISTS idx_sale_items_product ON sale_items (product_id);
+        `);
+      });
+
+      // Índices para as consultas de agregação do dashboard analítico e filtros de auditoria
+      await runMigration('analytics_030', async () => {
+        await queryRunner.query(`
+          CREATE INDEX IF NOT EXISTS idx_audit_logs_company_created
+          ON audit_logs (company_id, created_at DESC);
+        `);
+        await queryRunner.query(`
+          CREATE INDEX IF NOT EXISTS idx_products_company ON products (company_id);
+        `);
+      });
+
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();

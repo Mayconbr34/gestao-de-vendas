@@ -114,7 +114,21 @@ A documentação Swagger/UI fica em `http://localhost:3000/docs` (apenas logado)
 - `DELETE /icms-rates/:id` — remove alíquota de ICMS
 
 ### Auditoria
-- `GET /audits` — auditoria de ações (login/criação/edição/remoção)
+- `GET /audits` — auditoria de ações (login/criação/edição/remoção). Filtros opcionais: `from`, `to` (AAAA-MM-DD), `action`, `resource` e `companyId` (super admin)
+
+### Vendas (PDV)
+- `GET /sales/availability` — indica se o PDV está habilitado para a empresa (flag **PDV habilitado** em Config. empresa)
+- `POST /sales` — registra uma venda (itens, forma de pagamento, desconto). Bloqueia os produtos, valida e baixa o estoque em uma única transação; o preço vem do catálogo
+- `GET /sales` — lista vendas (filtros `from`, `to`, `status`, `limit`, `companyId`)
+- `GET /sales/:id` — detalhe da venda
+- `POST /sales/:id/cancel` — cancela a venda e devolve os itens ao estoque (administradores)
+
+### Dashboard analítico
+Todas as rotas aceitam `from`/`to` (AAAA-MM-DD, padrão: últimos 30 dias) e `companyId` (super admin). As agregações são feitas no PostgreSQL.
+- `GET /analytics/overview` — cadastros, valor de estoque, série de auditoria por dia/mês, ações mais frequentes, produtos por categoria e regras fiscais por UF
+- `GET /analytics/sales` — faturamento, pedidos, ticket médio, margem bruta, comparação com o período anterior, série diária com média móvel, **previsão por regressão linear**, top produtos, categoria, forma de pagamento, dia da semana, horário e **curva ABC**
+- `GET /analytics/data-quality` — completude dos atributos e inconsistências do cadastro (NCM/CEST inválidos, GTIN inválido, SKU/código de barras duplicados, margem negativa, estoque negativo etc.)
+- `GET /analytics/segments` — **segmentação de produtos por k-means** (giro, margem, preço e estoque)
 
 ### API Keys
 - `GET /api-keys` — lista chaves de API
@@ -185,6 +199,25 @@ pytest tests/test_users.py
 | `test_products.py`   | Listar, criar, buscar, CRUD completo (criar→deletar) |
 | `test_categories.py` | Listar, criar, atualizar categoria                   |
 | `test_users.py`      | Perfil `/users/me`, atualização, listagem            |
+| `test_sales.py`      | PDV: venda, baixa e estorno de estoque, validações   |
+| `test_analytics.py`  | Dashboard analítico, reconciliação e filtros de auditoria |
+
+## Testes unitários do backend (Jest)
+
+Os algoritmos do dashboard analítico (regressão linear, k-means e verificação de qualidade dos dados) têm testes unitários:
+
+```bash
+cd backend && npm test
+```
+
+## Análise de dados em Python
+
+O script `analise/analise_vendas.py` consome a API, prepara os dados com pandas e gera análise exploratória, previsão (regressão linear) e segmentação de produtos (k-means com escolha de k pela silhueta), salvando gráficos e um resumo em `analise/saida/`.
+
+```bash
+pip install -r analise/requirements.txt
+API_URL=http://localhost:3001 API_EMAIL=admin@admin.com API_PASSWORD=123456 python analise/analise_vendas.py --dias 90
+```
 
 ## Docker
 

@@ -5,3 +5,5 @@ dist/
 coverage/
 .next/
 .DS_Store
+analise/saida/
+__pycache__/

@@ -125,6 +125,17 @@ const Icons = {
       <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
     </svg>
   ),
+  cart: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+    </svg>
+  ),
+  chart: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+    </svg>
+  ),
 };
 
 /* ─── Types ──────────────────────────────────────────────── */
@@ -144,6 +155,11 @@ const productChildren: NavItem[] = [
   { href: '/produtos/novo', label: 'Cadastrar produto', icon: Icons.plus },
   { href: '/produtos/importar', label: 'Importar produtos', icon: Icons.list },
   { href: '/categorias', label: 'Categorias', icon: Icons.tag },
+];
+
+const salesChildren: NavItem[] = [
+  { href: '/pdv', label: 'PDV', icon: Icons.cart },
+  { href: '/analise', label: 'Análise de vendas', icon: Icons.chart },
 ];
 
 const companyChildren: NavItem[] = [
@@ -318,6 +334,9 @@ function SidebarContent({
 
         {role === 'COMPANY_USER' ? (
           <>
+            <SectionLabel>Vendas</SectionLabel>
+            <NavGroup label="Vendas" icon={Icons.cart} items={salesChildren} pathname={pathname} defaultOpen />
+
             <SectionLabel>Configurações</SectionLabel>
             <NavGroup label="Configurações" icon={Icons.settings} items={companyUserChildren} pathname={pathname} defaultOpen />
           </>
@@ -325,6 +344,9 @@ function SidebarContent({
           <>
             <SectionLabel>Catálogo</SectionLabel>
             <NavGroup label="Produtos" icon={Icons.box} items={productChildren} pathname={pathname} defaultOpen />
+
+            <SectionLabel>Vendas</SectionLabel>
+            <NavGroup label="Vendas" icon={Icons.cart} items={salesChildren} pathname={pathname} defaultOpen />
 
             <SectionLabel>{role !== 'SUPER_ADMIN' ? 'Empresa' : 'Operações'}</SectionLabel>
             {role !== 'SUPER_ADMIN' ? (
