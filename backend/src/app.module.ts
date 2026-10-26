@@ -13,6 +13,8 @@ import { FiscalRulesModule } from './taxes/fiscal-rules.module';
 import { UsersModule } from './users/users.module';
 import { MigrationsModule } from './migrations/migrations.module';
 import { PlatformSettingsModule } from './platform-settings/platform-settings.module';
+import { SalesModule } from './sales/sales.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { PlatformSettingsModule } from './platform-settings/platform-settings.mo
     IcmsRatesModule,
     FiscalRulesModule,
     PlatformSettingsModule,
+    SalesModule,
+    AnalyticsModule,
     MigrationsModule
   ]
 })

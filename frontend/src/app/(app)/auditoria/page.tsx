@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiRequest } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
+import { buildQuery, daysAgo, toIsoDate } from '../../../lib/format';
+import CompanyFilter from '../../../components/CompanyFilter';
 
 type AuditLog = {
   id: string;
@@ -28,10 +30,29 @@ const Ic = {
   ),
 };
 
+const ACTION_FILTERS: { value: string; label: string }[] = [
+  { value: '', label: 'Todas as ações' },
+  { value: 'LOGIN', label: 'Login' },
+  { value: 'CREATE_SALE', label: 'Venda registrada' },
+  { value: 'CANCEL_SALE', label: 'Venda cancelada' },
+  { value: 'CREATE_PRODUCT', label: 'Produto criado' },
+  { value: 'UPDATE_PRODUCT', label: 'Produto atualizado' },
+  { value: 'DELETE_PRODUCT', label: 'Produto removido' },
+  { value: 'CREATE_USER', label: 'Usuário criado' },
+  { value: 'UPDATE_USER', label: 'Usuário atualizado' },
+  { value: 'CREATE_FISCAL_RULE', label: 'Regra fiscal criada' },
+  { value: 'UPDATE_FISCAL_RULE', label: 'Regra fiscal atualizada' }
+];
+
 export default function AuditoriaPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [audits, setAudits] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [from, setFrom] = useState(daysAgo(29));
+  const [to, setTo] = useState(toIsoDate(new Date()));
+  const [action, setAction] = useState('');
+  const [companyId, setCompanyId] = useState('');
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   const tk = useMemo(
     () => ({
@@ -60,10 +81,12 @@ export default function AuditoriaPage() {
   useEffect(() => {
     if (!token) return;
     setLoading(true);
-    apiRequest<AuditLog[]>('/audits', {}, token)
+    const query = buildQuery({ from, to, action, companyId: isSuperAdmin ? companyId : null });
+    apiRequest<AuditLog[]>(`/audits${query}`, {}, token)
       .then(setAudits)
+      .catch(() => setAudits([]))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, from, to, action, companyId, isSuperAdmin]);
 
   return (
     <div style={{ padding: 0, background: tk.bg, minHeight: '100%', fontFamily: 'var(--np-font)' }}>
@@ -85,8 +108,30 @@ export default function AuditoriaPage() {
           <p style={{ fontSize: '13.5px', color: tk.textSub, marginTop: '4px' }}>Histórico de acessos e ações no sistema.</p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontSize: '12.5px', color: tk.textSub }}>{audits.length} evento{audits.length !== 1 ? 's' : ''}</span>
+        <form className="an-filters" aria-label="Filtros da auditoria" onSubmit={(event) => event.preventDefault()}>
+          <label>
+            De
+            <input type="date" value={from} max={to} onChange={(event) => setFrom(event.target.value)} />
+          </label>
+          <label>
+            Até
+            <input type="date" value={to} min={from} onChange={(event) => setTo(event.target.value)} />
+          </label>
+          <label>
+            Ação
+            <select value={action} onChange={(event) => setAction(event.target.value)}>
+              {ACTION_FILTERS.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {isSuperAdmin ? <CompanyFilter token={token} value={companyId} onChange={setCompanyId} /> : null}
+        </form>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }} aria-live="polite">
+          <span style={{ fontSize: '12.5px', color: tk.textSub }}>{audits.length} evento{audits.length !== 1 ? 's' : ''} no período</span>
         </div>
 
         <div className="pl-table-wrap" style={{ background: tk.surface, border: `1px solid ${tk.border}`, borderRadius: '12px', overflowX: 'auto', overflowY: 'hidden', boxShadow: tk.shadow }}>

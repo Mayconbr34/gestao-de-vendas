@@ -1385,3 +1385,506 @@ input {
     display: grid;
   }
 }
+
+/* ─── PI IV: PDV e Análise de vendas ─────────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.an-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.an-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.an-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.an-header p {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.an-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.an-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.an-filters input,
+.an-filters select,
+.pdv-search input,
+.pdv-pay select,
+.pdv-pay input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13px;
+  min-height: 38px;
+}
+
+.an-presets {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.an-presets button {
+  border: none;
+  background: var(--card);
+  color: var(--ink);
+  padding: 8px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+  min-height: 38px;
+}
+
+.an-presets button + button {
+  border-left: 1px solid var(--border);
+}
+
+.an-presets button[aria-pressed='true'] {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.an-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.an-tabs button {
+  border: none;
+  background: none;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.an-tabs button[aria-selected='true'] {
+  color: var(--accent-dark);
+  border-bottom-color: var(--accent);
+}
+
+.an-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.an-kpi {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.an-kpi__label {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.an-kpi__value {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.an-kpi__delta {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.an-kpi__delta.up {
+  color: #047857;
+}
+
+.an-kpi__delta.down {
+  color: #b91c1c;
+}
+
+.an-kpi__delta.neutral {
+  color: var(--muted);
+}
+
+[data-theme='dark'] .an-kpi__delta.up {
+  color: #86efac;
+}
+
+[data-theme='dark'] .an-kpi__delta.down {
+  color: #fca5a5;
+}
+
+.an-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.an-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  min-width: 0;
+}
+
+.an-panel.wide {
+  grid-column: 1 / -1;
+}
+
+.an-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.an-panel-head h2 {
+  font-size: 14.5px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--ink);
+}
+
+.an-panel-head p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 3px 0 0;
+}
+
+.an-link {
+  border: none;
+  background: none;
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px;
+  white-space: nowrap;
+}
+
+.an-table-wrap {
+  overflow-x: auto;
+}
+
+.an-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.an-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.an-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--surface);
+  color: var(--ink);
+}
+
+.an-table td.num,
+.an-table th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.an-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.an-badge.A,
+.an-badge.ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.an-badge.B,
+.an-badge.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.an-badge.C,
+.an-badge.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+html[data-contrast='high'] .an-badge {
+  border-color: currentColor;
+}
+
+.an-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.an-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.an-empty {
+  padding: 28px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.an-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+.an-cluster {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* PDV */
+
+.pdv-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.pdv-search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pdv-search input {
+  flex: 1;
+  font-size: 14px;
+}
+
+.pdv-products {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  max-height: 560px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.pdv-product {
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 96px;
+}
+
+.pdv-product:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.pdv-product:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pdv-product__name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pdv-product__meta {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.pdv-product__price {
+  margin-top: auto;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+.pdv-cart {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pdv-cart-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.pdv-cart-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--surface);
+}
+
+.pdv-qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pdv-qty button {
+  border: none;
+  background: var(--surface);
+  color: var(--ink);
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.pdv-qty input {
+  width: 48px;
+  height: 32px;
+  border: none;
+  text-align: center;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.pdv-totals {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.pdv-totals div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.pdv-totals .grand {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.pdv-pay {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pdv-pay label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.pdv-pay .full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 960px) {
+  .pdv-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pdv-cart {
+    position: static;
+  }
+
+  .an-grid {
+    grid-template-columns: 1fr;
+  }
+}

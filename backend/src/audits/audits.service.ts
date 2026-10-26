@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditLog } from './audit-log.entity';
+import { ANALYTICS_TZ, dayEndExclusiveSql, dayStartSql } from '../common/date-range';
 
 export type AuditActionInput = {
   userId?: string | null;
@@ -87,7 +88,16 @@ export class AuditsService {
     await this.auditsRepository.save(log);
   }
 
-  async list(params?: { companyId?: string | null; userId?: string | null }) {
+  async list(params?: {
+    companyId?: string | null;
+    userId?: string | null;
+    /** Dia inicial (AAAA-MM-DD), inclusive */
+    from?: string | null;
+    /** Dia final (AAAA-MM-DD), inclusive */
+    to?: string | null;
+    action?: string | null;
+    resource?: string | null;
+  }) {
     const qb = this.auditsRepository
       .createQueryBuilder('audit')
       .leftJoin('audit.user', 'user')
@@ -108,9 +118,27 @@ export class AuditsService {
       .orderBy('audit.created_at', 'DESC');
 
     if (params?.userId) {
-      qb.where('audit.user_id = :userId', { userId: params.userId });
+      qb.andWhere('audit.user_id = :userId', { userId: params.userId });
     } else if (params?.companyId) {
-      qb.where('audit.company_id = :companyId', { companyId: params.companyId });
+      qb.andWhere('audit.company_id = :companyId', { companyId: params.companyId });
+    }
+    if (params?.from) {
+      qb.andWhere(`audit.created_at >= ${dayStartSql(':from', ':tz')}`, {
+        from: params.from,
+        tz: ANALYTICS_TZ
+      });
+    }
+    if (params?.to) {
+      qb.andWhere(`audit.created_at < ${dayEndExclusiveSql(':to', ':tz')}`, {
+        to: params.to,
+        tz: ANALYTICS_TZ
+      });
+    }
+    if (params?.action) {
+      qb.andWhere('audit.action = :action', { action: params.action });
+    }
+    if (params?.resource) {
+      qb.andWhere('audit.resource = :resource', { resource: params.resource });
     }
 
     const rows = await qb.getRawMany();
